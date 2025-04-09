@@ -8,6 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PlusCircle, Building, BookOpen, Users } from "lucide-react";
 import UsersList from "@/components/dashboard/UsersList";
 import CourseCard from "@/components/dashboard/CourseCard";
+import AddOrganizationForm from "@/components/forms/AddOrganizationForm";
+import AddCourseForm from "@/components/forms/AddCourseForm";
 
 // Mock data for demonstration
 const mockOrganizations = [
@@ -106,6 +108,8 @@ const mockUsers = [
 
 const SuperUserDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
+  const [organizationDialogOpen, setOrganizationDialogOpen] = useState(false);
+  const [courseDialogOpen, setCourseDialogOpen] = useState(false);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -118,11 +122,17 @@ const SuperUserDashboard = () => {
               <p className="text-gray-600">Manage organizations, courses, and system-wide settings</p>
             </div>
             <div className="flex space-x-3">
-              <Button className="bg-complybrand-700 hover:bg-complybrand-800">
+              <Button 
+                className="bg-complybrand-700 hover:bg-complybrand-800"
+                onClick={() => setOrganizationDialogOpen(true)}
+              >
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Add Organization
               </Button>
-              <Button className="bg-complybrand-700 hover:bg-complybrand-800">
+              <Button 
+                className="bg-complybrand-700 hover:bg-complybrand-800"
+                onClick={() => setCourseDialogOpen(true)}
+              >
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Add Course
               </Button>
@@ -277,6 +287,17 @@ const SuperUserDashboard = () => {
           </Tabs>
         </div>
       </main>
+
+      <AddOrganizationForm 
+        open={organizationDialogOpen}
+        onOpenChange={setOrganizationDialogOpen}
+      />
+
+      <AddCourseForm
+        open={courseDialogOpen}
+        onOpenChange={setCourseDialogOpen}
+      />
+      
       <Footer />
     </div>
   );

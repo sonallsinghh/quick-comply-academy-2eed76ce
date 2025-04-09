@@ -19,7 +19,6 @@ const coursesData = [
     duration: "2 hours",
     enrolledCount: 425,
     lastUpdated: "March 15, 2023",
-    instructor: "Jennifer Wilson",
     topics: ["GDPR", "CCPA", "Data Protection", "Privacy Policies", "Consent Management"],
     slides: [
       { id: "s1", title: "Introduction to Data Privacy", duration: "10 min" },
@@ -40,7 +39,6 @@ const coursesData = [
     duration: "1.5 hours",
     enrolledCount: 512,
     lastUpdated: "April 2, 2023",
-    instructor: "Michael Chen",
     topics: ["Password Security", "Phishing Prevention", "Device Security", "Incident Reporting"],
     slides: [
       { id: "s1", title: "Why Information Security Matters", duration: "10 min" },
@@ -60,7 +58,6 @@ const coursesData = [
     duration: "45 minutes",
     enrolledCount: 318,
     lastUpdated: "February 10, 2023",
-    instructor: "Sarah Johnson",
     topics: ["Workplace Harassment", "Reporting Procedures", "Bystander Intervention", "Inclusive Communication"],
     slides: [
       { id: "s1", title: "Understanding Harassment", duration: "8 min" },
@@ -120,8 +117,8 @@ const CourseDetails = () => {
               
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900">{course.title}</h1>
-                  <p className="text-gray-600 mt-1">{course.description}</p>
+                  <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{course.title}</h1>
+                  <p className="text-gray-600 dark:text-gray-300 mt-1">{course.description}</p>
                 </div>
                 <Link to={`/course/${courseId}/play`}>
                   <Button className="bg-complybrand-700 hover:bg-complybrand-800">
@@ -132,25 +129,25 @@ const CourseDetails = () => {
               </div>
               
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                <div className="flex flex-col items-center p-4 bg-white rounded-lg shadow-sm border">
-                  <Clock className="h-6 w-6 text-complybrand-600 mb-2" />
-                  <span className="text-sm text-gray-500">Duration</span>
-                  <span className="font-medium">{course.duration}</span>
+                <div className="flex flex-col items-center p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm border dark:border-gray-700">
+                  <Clock className="h-6 w-6 text-complybrand-600 dark:text-complybrand-400 mb-2" />
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Duration</span>
+                  <span className="font-medium dark:text-white">{course.duration}</span>
                 </div>
-                <div className="flex flex-col items-center p-4 bg-white rounded-lg shadow-sm border">
-                  <Users className="h-6 w-6 text-complybrand-600 mb-2" />
-                  <span className="text-sm text-gray-500">Enrolled</span>
-                  <span className="font-medium">{course.enrolledCount}</span>
+                <div className="flex flex-col items-center p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm border dark:border-gray-700">
+                  <Users className="h-6 w-6 text-complybrand-600 dark:text-complybrand-400 mb-2" />
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Enrolled</span>
+                  <span className="font-medium dark:text-white">{course.enrolledCount}</span>
                 </div>
-                <div className="flex flex-col items-center p-4 bg-white rounded-lg shadow-sm border">
-                  <BookOpen className="h-6 w-6 text-complybrand-600 mb-2" />
-                  <span className="text-sm text-gray-500">Topics</span>
-                  <span className="font-medium">{course.topics.length}</span>
+                <div className="flex flex-col items-center p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm border dark:border-gray-700">
+                  <BookOpen className="h-6 w-6 text-complybrand-600 dark:text-complybrand-400 mb-2" />
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Topics</span>
+                  <span className="font-medium dark:text-white">{course.topics.length}</span>
                 </div>
-                <div className="flex flex-col items-center p-4 bg-white rounded-lg shadow-sm border">
-                  <Award className="h-6 w-6 text-complybrand-600 mb-2" />
-                  <span className="text-sm text-gray-500">Certificate</span>
-                  <span className="font-medium">Included</span>
+                <div className="flex flex-col items-center p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm border dark:border-gray-700">
+                  <Award className="h-6 w-6 text-complybrand-600 dark:text-complybrand-400 mb-2" />
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Certificate</span>
+                  <span className="font-medium dark:text-white">Included</span>
                 </div>
               </div>
             </div>
@@ -159,29 +156,28 @@ const CourseDetails = () => {
               <TabsList>
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="content">Course Content</TabsTrigger>
-                <TabsTrigger value="instructor">Instructor</TabsTrigger>
               </TabsList>
               
               <TabsContent value="overview" className="space-y-4">
-                <Card>
+                <Card className="dark:bg-gray-800 dark:border-gray-700">
                   <CardHeader>
                     <CardTitle>Course Description</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-gray-600">{course.longDescription}</p>
+                    <p className="text-gray-600 dark:text-gray-300">{course.longDescription}</p>
                     
                     <div className="mt-6">
-                      <h3 className="font-medium mb-2">Key Topics</h3>
+                      <h3 className="font-medium mb-2 dark:text-gray-200">Key Topics</h3>
                       <div className="flex flex-wrap gap-2">
                         {course.topics.map((topic: string) => (
-                          <Badge key={topic} variant="secondary">{topic}</Badge>
+                          <Badge key={topic} variant="secondary" className="dark:bg-gray-700 dark:text-gray-200">{topic}</Badge>
                         ))}
                       </div>
                     </div>
                     
                     <div className="mt-6">
-                      <h3 className="font-medium mb-2">What You'll Learn</h3>
-                      <ul className="list-disc pl-5 space-y-1 text-gray-600">
+                      <h3 className="font-medium mb-2 dark:text-gray-200">What You'll Learn</h3>
+                      <ul className="list-disc pl-5 space-y-1 text-gray-600 dark:text-gray-300">
                         <li>Understand the key principles of {course.title.toLowerCase()}</li>
                         <li>Implement best practices for compliance</li>
                         <li>Identify potential risks and how to mitigate them</li>
@@ -190,15 +186,11 @@ const CourseDetails = () => {
                     </div>
                     
                     <div className="mt-6">
-                      <h3 className="font-medium">Additional Information</h3>
-                      <div className="mt-2 grid grid-cols-2 gap-4 text-sm">
+                      <h3 className="font-medium dark:text-gray-200">Additional Information</h3>
+                      <div className="mt-2 grid grid-cols-1 gap-4 text-sm">
                         <div>
-                          <span className="block text-gray-500">Last Updated</span>
-                          <span>{course.lastUpdated}</span>
-                        </div>
-                        <div>
-                          <span className="block text-gray-500">Instructor</span>
-                          <span>{course.instructor}</span>
+                          <span className="block text-gray-500 dark:text-gray-400">Last Updated</span>
+                          <span className="dark:text-gray-300">{course.lastUpdated}</span>
                         </div>
                       </div>
                     </div>
@@ -207,54 +199,28 @@ const CourseDetails = () => {
               </TabsContent>
               
               <TabsContent value="content">
-                <Card>
+                <Card className="dark:bg-gray-800 dark:border-gray-700">
                   <CardHeader>
                     <CardTitle>Course Content</CardTitle>
-                    <CardDescription>
+                    <CardDescription className="dark:text-gray-300">
                       {course.slides.length} sections • {totalDuration} minutes total
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
                       {course.slides.map((slide: { id: string; title: string; duration: string }, index: number) => (
-                        <div key={slide.id} className="p-4 border rounded-md">
+                        <div key={slide.id} className="p-4 border rounded-md dark:border-gray-700 dark:bg-gray-700">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center">
-                              <span className="flex items-center justify-center w-6 h-6 rounded-full bg-complybrand-100 text-complybrand-700 text-xs mr-3">
+                              <span className="flex items-center justify-center w-6 h-6 rounded-full bg-complybrand-100 text-complybrand-700 dark:bg-complybrand-800 dark:text-complybrand-200 text-xs mr-3">
                                 {index + 1}
                               </span>
-                              <span className="font-medium">{slide.title}</span>
+                              <span className="font-medium dark:text-gray-200">{slide.title}</span>
                             </div>
-                            <span className="text-gray-500 text-sm">{slide.duration}</span>
+                            <span className="text-gray-500 dark:text-gray-300 text-sm">{slide.duration}</span>
                           </div>
                         </div>
                       ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              <TabsContent value="instructor">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>About the Instructor</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-start space-x-4">
-                      <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center">
-                        <span className="text-2xl text-gray-600">
-                          {course.instructor.split(' ').map((n: string) => n[0]).join('')}
-                        </span>
-                      </div>
-                      <div>
-                        <h3 className="font-medium text-lg">{course.instructor}</h3>
-                        <p className="text-gray-500">Compliance Training Specialist</p>
-                        <p className="mt-2 text-gray-600">
-                          {course.instructor} is an experienced trainer specializing in corporate compliance topics. 
-                          With over 10 years of industry experience, they have helped hundreds of 
-                          organizations improve their compliance programs.
-                        </p>
-                      </div>
                     </div>
                   </CardContent>
                 </Card>

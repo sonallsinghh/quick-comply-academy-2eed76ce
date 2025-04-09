@@ -19,14 +19,14 @@ const SlideContent: React.FC<SlideContentProps> = ({
   return (
     <>
       <div className="mb-4">
-        <h2 className="text-2xl font-bold">{title}</h2>
-        <p className="text-gray-500">Slide {currentIndex + 1} of {totalSlides}</p>
+        <h2 className="text-2xl font-bold dark:text-white">{title}</h2>
+        <p className="text-gray-500 dark:text-gray-400">Slide {currentIndex + 1} of {totalSlides}</p>
       </div>
       
       {/* Slide content - in a real app this could be a video or interactive content */}
-      <div className="aspect-video bg-gray-100 rounded-lg flex items-center justify-center mb-6 relative">
+      <div className="aspect-video bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center mb-6 relative">
         <div className="text-center p-8">
-          <p className="text-lg">{content}</p>
+          <p className="text-lg dark:text-gray-200">{content}</p>
         </div>
         
         {/* Video progress indicator */}

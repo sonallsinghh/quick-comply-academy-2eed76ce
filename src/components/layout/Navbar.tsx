@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, LogIn, AtSign, Mail } from "lucide-react";
+import { Menu, X, LogIn, AtSign, Mail, ArrowLeft } from "lucide-react";
 import { UserRole } from "../../App";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";

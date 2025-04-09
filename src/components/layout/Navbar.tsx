@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, LogIn } from "lucide-react";
+import { Menu, X, LogIn, AtSign, Mail } from "lucide-react";
 import { UserRole } from "../../App";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { motion } from "framer-motion";
 
 interface NavbarProps {
   userRole?: UserRole;
@@ -22,14 +23,18 @@ const Navbar = ({ userRole, onLogin }: NavbarProps) => {
   const isHomePage = location.pathname === "/";
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
   const [loginType, setLoginType] = useState<"admin" | "employee">("employee");
-  const [credentials, setCredentials] = useState({ email: "", password: "" });
+  const [credentials, setCredentials] = useState({ email: "", password: "", domain: "" });
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [domainLoginStep, setDomainLoginStep] = useState<"domain" | "credentials">("domain");
 
   const openLoginDialog = (type: "admin" | "employee") => {
     setLoginType(type);
     setLoginDialogOpen(true);
-    setCredentials({ email: "", password: "" });
+    setCredentials({ email: "", password: "", domain: "" });
+    if (type === "employee") {
+      setDomainLoginStep("domain");
+    }
   };
 
   const handleCredentialChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -37,11 +42,28 @@ const Navbar = ({ userRole, onLogin }: NavbarProps) => {
     setCredentials(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleDomainSubmit = () => {
+    if (!credentials.domain) {
+      setErrorMessage("Please enter your company domain");
+      setErrorDialogOpen(true);
+      return;
+    }
+    
+    // Validate domain format
+    if (!credentials.domain.match(/^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9](?:\.[a-zA-Z]{2,})+$/)) {
+      setErrorMessage("Please enter a valid domain (e.g., company.com)");
+      setErrorDialogOpen(true);
+      return;
+    }
+    
+    setDomainLoginStep("credentials");
+  };
+
   // Mock login handler for demonstration purposes
   const handleLogin = (type: "sso" | "credentials" = "credentials") => {
     if (loginType === "employee" && type === "sso") {
       // Mock SSO login for employees
-      toast.success("Redirecting to SSO provider...");
+      toast.success(`Redirecting to SSO provider for ${credentials.domain || "your company"}...`);
       setTimeout(() => {
         if (onLogin) {
           onLogin("employee");
@@ -71,6 +93,15 @@ const Navbar = ({ userRole, onLogin }: NavbarProps) => {
         setErrorDialogOpen(true);
       }
     } else if (loginType === "employee" && credentials.email && credentials.password) {
+      // For employee login, check if email matches the domain
+      const emailDomain = credentials.email.split('@')[1];
+      
+      if (emailDomain !== credentials.domain) {
+        setErrorMessage(`Please use an email address from the ${credentials.domain} domain`);
+        setErrorDialogOpen(true);
+        return;
+      }
+      
       // Mock credential validation for employees
       if (credentials.email.includes("@") && credentials.password.length >= 6) {
         if (onLogin) {
@@ -86,15 +117,22 @@ const Navbar = ({ userRole, onLogin }: NavbarProps) => {
     }
   };
 
+  const goBackToDomainStep = () => {
+    setDomainLoginStep("domain");
+  };
+
   return (
     <nav className="bg-white dark:bg-gray-900 shadow-sm fixed w-full top-0 z-50 animate-fade-in">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <Link to="/" className="flex-shrink-0 flex items-center">
-              <span className="text-2xl font-bold text-complybrand-800 dark:text-complybrand-300 hover:scale-105 transition-transform">
+              <motion.span 
+                whileHover={{ scale: 1.05 }}
+                className="text-2xl font-bold text-complybrand-800 dark:text-complybrand-300 transition-colors"
+              >
                 CompliQuick
-              </span>
+              </motion.span>
             </Link>
           </div>
 
@@ -102,12 +140,20 @@ const Navbar = ({ userRole, onLogin }: NavbarProps) => {
           <div className="hidden md:flex items-center space-x-4">
             {isHomePage ? (
               <>
-                <a href="#features" className="text-gray-700 dark:text-gray-300 hover:text-complybrand-600 dark:hover:text-complybrand-400 px-3 py-2 hover:scale-105 transition-transform">
+                <motion.a 
+                  href="#features" 
+                  className="text-gray-700 dark:text-gray-300 hover:text-complybrand-600 dark:hover:text-complybrand-400 px-3 py-2"
+                  whileHover={{ scale: 1.05, x: 3 }}
+                >
                   Features
-                </a>
-                <a href="#contact" className="text-gray-700 dark:text-gray-300 hover:text-complybrand-600 dark:hover:text-complybrand-400 px-3 py-2 hover:scale-105 transition-transform">
+                </motion.a>
+                <motion.a 
+                  href="#contact" 
+                  className="text-gray-700 dark:text-gray-300 hover:text-complybrand-600 dark:hover:text-complybrand-400 px-3 py-2"
+                  whileHover={{ scale: 1.05, x: 3 }}
+                >
                   Contact
-                </a>
+                </motion.a>
                 <ThemeToggle />
                 {!userRole && (
                   <div className="flex items-center space-x-2">
@@ -267,16 +313,74 @@ const Navbar = ({ userRole, onLogin }: NavbarProps) => {
         </DialogContent>
       </Dialog>
 
-      {/* Employee Login Dialog */}
-      <Dialog open={loginDialogOpen && loginType === "employee"} onOpenChange={(open) => {
+      {/* Employee Login Dialog - Domain Step */}
+      <Dialog open={loginDialogOpen && loginType === "employee" && domainLoginStep === "domain"} onOpenChange={(open) => {
         setLoginDialogOpen(open);
-        if (!open) setLoginType("employee");
+        if (!open) {
+          setLoginType("employee");
+          setDomainLoginStep("domain");
+        }
+      }}>
+        <DialogContent className="sm:max-w-[425px] animate-scale-in">
+          <DialogHeader>
+            <DialogTitle>Company Domain</DialogTitle>
+            <DialogDescription>
+              Enter your company domain to continue
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="domain">Company Domain</Label>
+              <div className="flex">
+                <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground">
+                  <AtSign className="h-4 w-4" />
+                </span>
+                <Input 
+                  id="domain" 
+                  name="domain"
+                  type="text" 
+                  placeholder="company.com" 
+                  value={credentials.domain}
+                  onChange={handleCredentialChange}
+                  className="rounded-l-none"
+                />
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Example: company.com, organization.org
+              </p>
+            </div>
+          </div>
+          <DialogFooter className="flex flex-col sm:flex-row sm:justify-between gap-2">
+            <Button 
+              variant="outline" 
+              className="w-full sm:w-auto" 
+              onClick={() => handleLogin("sso")}
+            >
+              Login with SSO
+            </Button>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button variant="outline" onClick={() => setLoginDialogOpen(false)}>Cancel</Button>
+              <Button onClick={handleDomainSubmit} className="bg-complybrand-700 hover:bg-complybrand-800">
+                Continue
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Employee Login Dialog - Credentials Step */}
+      <Dialog open={loginDialogOpen && loginType === "employee" && domainLoginStep === "credentials"} onOpenChange={(open) => {
+        setLoginDialogOpen(open);
+        if (!open) {
+          setLoginType("employee");
+          setDomainLoginStep("domain");
+        }
       }}>
         <DialogContent className="sm:max-w-[425px] animate-scale-in">
           <DialogHeader>
             <DialogTitle>Employee Login</DialogTitle>
             <DialogDescription>
-              Login to access your training courses.
+              Login with your {credentials.domain} credentials
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -286,7 +390,7 @@ const Navbar = ({ userRole, onLogin }: NavbarProps) => {
                 id="email" 
                 name="email"
                 type="email" 
-                placeholder="employee@company.com" 
+                placeholder={`username@${credentials.domain}`}
                 value={credentials.email}
                 onChange={handleCredentialChange}
                 autoComplete="email"
@@ -307,13 +411,20 @@ const Navbar = ({ userRole, onLogin }: NavbarProps) => {
           <DialogFooter className="flex flex-col sm:flex-row sm:justify-between gap-2">
             <Button 
               variant="outline" 
-              className="w-full sm:w-auto" 
-              onClick={() => handleLogin("sso")}
+              onClick={goBackToDomainStep}
+              className="w-full sm:w-auto flex items-center gap-1"
             >
-              Login with SSO
+              <ArrowLeft className="h-4 w-4" /> Back
             </Button>
             <div className="flex flex-col sm:flex-row gap-2">
-              <Button variant="outline" onClick={() => setLoginDialogOpen(false)}>Cancel</Button>
+              <Button 
+                variant="outline" 
+                onClick={() => handleLogin("sso")}
+                className="flex items-center gap-1"
+              >
+                <Mail className="h-4 w-4" />
+                Login with SSO
+              </Button>
               <Button onClick={() => handleLogin()} className="bg-complybrand-700 hover:bg-complybrand-800">Login</Button>
             </div>
           </DialogFooter>

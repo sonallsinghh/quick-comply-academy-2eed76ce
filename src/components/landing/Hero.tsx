@@ -6,14 +6,24 @@ import { motion } from "framer-motion";
 const Hero = () => {
   return (
     <div className="relative overflow-hidden pt-16 bg-gradient-to-b from-white to-gray-100 dark:from-gray-900 dark:to-gray-950">
-      {/* Background elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-24 -right-24 w-96 h-96 bg-complybrand-100 dark:bg-complybrand-900/20 rounded-full blur-3xl opacity-50"></div>
-        <div className="absolute top-1/2 -left-24 w-80 h-80 bg-blue-100 dark:bg-blue-900/20 rounded-full blur-3xl opacity-40"></div>
-        <div className="absolute bottom-0 right-1/3 w-64 h-64 bg-purple-100 dark:bg-purple-900/20 rounded-full blur-3xl opacity-30"></div>
+      {/* Full-screen background image with overlay */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-transparent dark:from-black/80 dark:via-black/60 z-10"></div>
+        <img 
+          src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=2670"
+          alt="Compliance Training" 
+          className="w-full h-full object-cover animate-[pulse_10s_ease-in-out_infinite]"
+        />
       </div>
 
-      <div className="relative pt-10 pb-20 sm:pb-24">
+      {/* Background elements */}
+      <div className="absolute inset-0 overflow-hidden z-10">
+        <div className="absolute -top-24 -right-24 w-96 h-96 bg-complybrand-100/20 dark:bg-complybrand-900/20 rounded-full blur-3xl opacity-50"></div>
+        <div className="absolute top-1/2 -left-24 w-80 h-80 bg-blue-100/20 dark:bg-blue-900/20 rounded-full blur-3xl opacity-40"></div>
+        <div className="absolute bottom-0 right-1/3 w-64 h-64 bg-purple-100/20 dark:bg-purple-900/20 rounded-full blur-3xl opacity-30"></div>
+      </div>
+
+      <div className="relative pt-10 pb-20 sm:pb-24 z-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="lg:grid lg:grid-cols-12 lg:gap-8">
             <motion.div 
@@ -22,7 +32,7 @@ const Hero = () => {
               transition={{ duration: 0.7 }}
               className="sm:text-center md:mx-auto md:max-w-3xl lg:col-span-6 lg:text-left"
             >
-              <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-gray-50 sm:text-5xl md:text-6xl">
+              <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl md:text-6xl">
                 <motion.span 
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -35,7 +45,7 @@ const Hero = () => {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.7, delay: 0.4 }}
-                  className="block bg-gradient-to-r from-complybrand-700 to-blue-500 dark:from-complybrand-400 dark:to-blue-300 bg-clip-text text-transparent transition-all duration-300 hover:translate-x-2"
+                  className="block bg-gradient-to-r from-complybrand-400 to-blue-300 bg-clip-text text-transparent transition-all duration-300 hover:translate-x-2"
                 >
                   Compliance Training
                 </motion.span>
@@ -44,7 +54,7 @@ const Hero = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.7, delay: 0.6 }}
-                className="mt-3 text-base text-gray-500 dark:text-gray-400 sm:mt-5 sm:text-xl lg:text-lg xl:text-xl"
+                className="mt-3 text-base text-gray-100 dark:text-gray-200 sm:mt-5 sm:text-xl lg:text-lg xl:text-xl"
               >
                 CompliQuick helps organizations deliver effective compliance training that employees actually complete. Our platform streamlines the entire compliance training process.
               </motion.p>
@@ -64,7 +74,7 @@ const Hero = () => {
                 </div>
                 <div className="mt-3 sm:mt-0 sm:ml-3">
                   <a href="#features">
-                    <Button variant="outline" className="w-full flex items-center justify-center px-8 py-3 text-base font-medium transition-transform hover:scale-105">
+                    <Button variant="outline" className="w-full flex items-center justify-center px-8 py-3 text-base font-medium transition-transform hover:scale-105 border-white text-white hover:bg-white/10 dark:border-gray-300 dark:text-gray-300 dark:hover:bg-white/5">
                       Learn More
                     </Button>
                   </a>
@@ -127,7 +137,7 @@ const Hero = () => {
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, delay: 0.9 }}
-        className="relative z-10 bg-white dark:bg-gray-900 py-12 border-t border-gray-100 dark:border-gray-800"
+        className="relative z-20 bg-white dark:bg-gray-900 py-12 border-t border-gray-100 dark:border-gray-800"
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 gap-8 md:grid-cols-4">

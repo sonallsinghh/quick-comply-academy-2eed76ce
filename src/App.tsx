@@ -11,6 +11,8 @@ import AdminDashboard from "./pages/AdminDashboard";
 import UserDashboard from "./pages/UserDashboard";
 import CoursePlayer from "./pages/CoursePlayer";
 import CourseDetails from "./pages/CourseDetails";
+import QuizPage from "./pages/QuizPage";
+import ResultPage from "./pages/ResultPage";
 import { useState } from "react";
 
 // Mock authentication for demonstration purposes
@@ -36,6 +38,8 @@ const App = () => {
             <Route path="/dashboard" element={<UserDashboard />} />
             <Route path="/course/:courseId" element={<CourseDetails />} />
             <Route path="/course/:courseId/play" element={<CoursePlayer />} />
+            <Route path="/course/:courseId/quiz" element={<QuizPage />} />
+            <Route path="/course/:courseId/result" element={<ResultPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

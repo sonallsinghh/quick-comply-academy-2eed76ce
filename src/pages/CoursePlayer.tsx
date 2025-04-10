@@ -8,10 +8,34 @@ import CourseHeader from "@/components/course/CourseHeader";
 import CourseNotFound from "@/components/course/CourseNotFound";
 import { useQuery } from "@tanstack/react-query";
 
+// API endpoints for a real implementation
+const API_ENDPOINTS = {
+  // SSO Login
+  SSO_LOGIN: "/api/auth/sso/login",
+  SSO_CALLBACK: "/api/auth/sso/callback",
+  
+  // Admin/Superuser Login
+  ADMIN_LOGIN: "/api/auth/login",
+  
+  // Course Content
+  GET_COURSE_SLIDES: (courseId: string) => `/api/courses/${courseId}/slides`,
+  GET_COURSE_EXPLANATIONS: (courseId: string, organizationId: string) => 
+    `/api/courses/${courseId}/explanations?organizationId=${organizationId}`,
+  GET_PRESENTER_AVATAR: (courseId: string) => `/api/courses/${courseId}/presenter`,
+  GET_SLIDE_AUDIO: (courseId: string, slideId: string) => `/api/courses/${courseId}/slides/${slideId}/audio`,
+  
+  // Course Progress
+  UPDATE_PROGRESS: (courseId: string) => `/api/courses/${courseId}/progress`,
+  
+  // S3 File Paths (these would be returned by the API, not called directly)
+  S3_PPT_PATH: "s3://myaudiouploadbucket/Blue White Professional Modern Safety Training Presentation.pptx",
+  S3_SLIDE_IMAGES_PATH: (courseId: string) => `s3://course-content/${courseId}/slides/`,
+  S3_AUDIO_PATH: (courseId: string) => `s3://course-content/${courseId}/audio/`
+};
+
 // Mock API function - replace with actual API call
 const fetchPersonalizedExplanations = async (courseId: string, organizationId: string = "default") => {
   // In a real app, this would be an API call to get personalized explanations
-  // GET /api/courses/:courseId/explanations?organizationId=:organizationId
   console.log(`Fetching explanations for course ${courseId} and org ${organizationId}`);
   
   // Mock data - replace with actual API response
@@ -41,12 +65,30 @@ const CoursePlayer = () => {
   // Mock organization ID - in a real app, this would come from user context/auth
   const organizationId = "webknot";
   
-  // Fetch course slides
+  // Fetch course slides - in a real implementation, this would be an API call
   useEffect(() => {
-    // In a real app, this would be an API call to get course content
+    // In a real app, this would be fetched from the backend:
     // GET /api/courses/:courseId/slides
     if (courseId && coursesSlides[courseId]) {
       setSlides([...coursesSlides[courseId]]);
+      
+      // Here's how you would fetch the actual slides in a real implementation:
+      /*
+      const fetchSlides = async () => {
+        try {
+          const response = await fetch(API_ENDPOINTS.GET_COURSE_SLIDES(courseId));
+          if (!response.ok) throw new Error('Failed to fetch slides');
+          
+          const slideData = await response.json();
+          setSlides(slideData);
+        } catch (error) {
+          toast.error("Failed to load course slides");
+          console.error(error);
+        }
+      };
+      
+      fetchSlides();
+      */
     }
   }, [courseId]);
   
@@ -94,8 +136,12 @@ const CoursePlayer = () => {
     });
     
     // Update progress in backend
-    // PUT /api/courses/:courseId/progress
-    // { status: "completed", slides: slides.length }
+    // In a real implementation:
+    // fetch(API_ENDPOINTS.UPDATE_PROGRESS(courseId), {
+    //   method: 'PUT',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify({ status: "completed", slides: slides.length })
+    // });
     
     // Navigate to the quiz page
     navigate(`/course/${courseId}/quiz`);

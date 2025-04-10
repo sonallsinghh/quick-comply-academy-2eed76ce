@@ -53,7 +53,7 @@ const SlideContent: React.FC<SlideContentProps> = ({
           <p className="text-xl font-medium dark:text-gray-200 transition-colors duration-300 mb-4">{title}</p>
           <p className="text-gray-700 dark:text-gray-300">{content}</p>
           
-          {/* Presenter avatar with simulated video */}
+          {/* Presenter avatar with enhanced animation */}
           <div className="absolute bottom-4 right-4">
             <AnimatePresence>
               {isPlaying && (
@@ -64,40 +64,59 @@ const SlideContent: React.FC<SlideContentProps> = ({
                   transition={{ duration: 0.3 }}
                   className="relative"
                 >
-                  <div className="relative overflow-hidden rounded-full border-2 border-white dark:border-gray-700 shadow-lg h-16 w-16">
+                  <div className="relative overflow-hidden rounded-full border-2 border-white dark:border-gray-700 shadow-lg h-20 w-20">
                     {/* Simulated video with animated gradient background */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-purple-400 via-pink-500 to-red-500 animate-pulse" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 animate-pulse" />
                     
-                    {/* Animated overlays to simulate video movement */}
-                    <motion.div 
-                      className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30"
-                      animate={{ 
-                        x: ['-100%', '100%'],
-                      }}
-                      transition={{ 
-                        repeat: Infinity, 
-                        duration: 2,
-                        ease: "linear"
-                      }}
-                    />
-                    
-                    <Avatar className="h-16 w-16 relative z-10 bg-opacity-70">
-                      <AvatarImage src="/placeholder.svg" alt="Presenter" />
-                      <AvatarFallback className="bg-gradient-to-br from-pink-400 to-purple-600 text-white text-lg">
-                        P
-                      </AvatarFallback>
-                    </Avatar>
+                    {/* Animated avatar */}
+                    <div className="relative z-10 h-full w-full flex items-center justify-center">
+                      <Avatar className="h-20 w-20 relative z-10">
+                        <AvatarImage src="/placeholder.svg" alt="Presenter" className="object-cover" />
+                        <AvatarFallback className="bg-gradient-to-br from-pink-400 to-purple-600 text-white text-xl">
+                          P
+                        </AvatarFallback>
+                      </Avatar>
+                      
+                      {/* Speaking animation overlay */}
+                      <motion.div
+                        className="absolute inset-0 flex items-end justify-center pb-3"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                      >
+                        <motion.div 
+                          className="flex space-x-1"
+                          animate={{ y: isPlaying ? [0, -3, 0] : 0 }}
+                          transition={{
+                            repeat: Infinity,
+                            repeatType: "mirror",
+                            duration: 0.6,
+                            ease: "easeInOut"
+                          }}
+                        >
+                          {[...Array(3)].map((_, i) => (
+                            <motion.div
+                              key={`wave-${i}`}
+                              className="w-1 h-1 bg-white rounded-full"
+                              animate={{
+                                height: [1, 4 + i * 2, 1],
+                              }}
+                              transition={{
+                                repeat: Infinity,
+                                duration: 0.6 + i * 0.1,
+                                delay: i * 0.1,
+                                ease: "easeInOut",
+                              }}
+                            />
+                          ))}
+                        </motion.div>
+                      </motion.div>
+                    </div>
                   </div>
                   
                   {/* Video indicator */}
                   <motion.div 
-                    animate={{ 
-                      scale: [1, 1.05, 1],
-                    }}
-                    transition={{ 
-                      repeat: Infinity, 
-                      duration: 2
-                    }}
+                    animate={{ scale: [1, 1.05, 1] }}
+                    transition={{ repeat: Infinity, duration: 2 }}
                     className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-white dark:border-gray-700"
                   />
                 </motion.div>

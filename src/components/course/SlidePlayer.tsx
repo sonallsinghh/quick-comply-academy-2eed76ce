@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import SlideControls from "./SlideControls";
@@ -39,12 +40,31 @@ const SlidePlayer = ({
   const [showSubtitles, setShowSubtitles] = useState(true);
   const [canAdvance, setCanAdvance] = useState(false);
   const progressTimerRef = useRef<number | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   
   const currentSlide = slides[currentSlideIndex];
   const isLastSlide = currentSlideIndex === slides.length - 1;
   const isFirstSlide = currentSlideIndex === 0;
   const totalCompleted = slides.filter(slide => slide.completed).length;
   const overallProgress = (totalCompleted / slides.length) * 100;
+  
+  // Initialize audio element
+  useEffect(() => {
+    // Create an audio element for the narration
+    audioRef.current = new Audio();
+    audioRef.current.volume = volume / 100;
+    
+    // In a real implementation, this would be the URL to the audio file for the current slide
+    // For now, we'll simulate it
+    // audioRef.current.src = `https://example.com/audio/slide-${currentSlideIndex}.mp3`;
+    
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
   
   // Reset progress when slide changes
   useEffect(() => {
@@ -59,11 +79,27 @@ const SlidePlayer = ({
     
     // Reset play state
     setIsPlaying(false);
+    
+    // In a real implementation, update the audio source for the new slide
+    // if (audioRef.current) {
+    //   audioRef.current.src = `https://example.com/audio/slide-${currentSlideIndex}.mp3`;
+    //   audioRef.current.load();
+    // }
   }, [currentSlideIndex]);
   
-  // Simulate playback - in a real app, this would control actual video/audio
+  // Update audio volume and mute state
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = isMuted ? 0 : volume / 100;
+    }
+  }, [volume, isMuted]);
+  
+  // Simulate playback - in a real app, this would sync with actual audio/video
   useEffect(() => {
     if (isPlaying) {
+      // Start audio playback in a real implementation
+      // if (audioRef.current) audioRef.current.play();
+      
       // Start progress timer
       progressTimerRef.current = window.setInterval(() => {
         setProgress(prev => {
@@ -77,6 +113,7 @@ const SlidePlayer = ({
           // Auto-pause at end of slide
           if (nextProgress >= 100) {
             setIsPlaying(false);
+            // if (audioRef.current) audioRef.current.pause();
             if (progressTimerRef.current) {
               window.clearInterval(progressTimerRef.current);
             }
@@ -86,10 +123,15 @@ const SlidePlayer = ({
           return nextProgress;
         });
       }, 100) as unknown as number;
-    } else if (progressTimerRef.current) {
+    } else {
+      // Pause audio in a real implementation
+      // if (audioRef.current) audioRef.current.pause();
+      
       // Stop progress timer if not playing
-      window.clearInterval(progressTimerRef.current);
-      progressTimerRef.current = null;
+      if (progressTimerRef.current) {
+        window.clearInterval(progressTimerRef.current);
+        progressTimerRef.current = null;
+      }
     }
     
     // Clean up timer on unmount
@@ -99,6 +141,14 @@ const SlidePlayer = ({
       }
     };
   }, [isPlaying, playbackRate, canAdvance]);
+  
+  // Update playback rate
+  useEffect(() => {
+    // In a real implementation, update audio playbackRate
+    // if (audioRef.current) {
+    //   audioRef.current.playbackRate = playbackRate;
+    // }
+  }, [playbackRate]);
   
   // Simulating playback
   const togglePlayback = () => {
@@ -126,7 +176,7 @@ const SlidePlayer = ({
   };
   
   const handleSlideSelect = (index: number) => {
-    // Only allow navigating to completed slides or the next available
+    // Allow navigating to completed slides or the next available
     const maxAllowedIndex = Math.max(
       slides.findIndex(slide => !slide.completed),
       currentSlideIndex

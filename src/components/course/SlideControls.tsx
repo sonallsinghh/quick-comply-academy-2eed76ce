@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { 
   Play, 
@@ -8,7 +7,7 @@ import {
   Volume2, 
   VolumeX,
   Subtitles,
-  SubtitlesOff
+  Captions
 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
@@ -98,7 +97,7 @@ const SlideControls: React.FC<SlideControlsProps> = ({
             {showSubtitles ? (
               <Subtitles className="h-4 w-4" />
             ) : (
-              <SubtitlesOff className="h-4 w-4" />
+              <Captions className="h-4 w-4" />
             )}
           </Button>
         </div>

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import SlideControls from "./SlideControls";
@@ -7,6 +6,7 @@ import SlideContent from "./SlideContent";
 import ChatHelp from "./ChatHelp";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 
 interface Slide {
   id: string;

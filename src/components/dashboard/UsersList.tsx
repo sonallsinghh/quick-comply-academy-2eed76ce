@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Search, MoreHorizontal, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
+import { motion } from "framer-motion";
 
 interface User {
   id: string;
@@ -16,7 +17,6 @@ interface User {
   department?: string;
   coursesCompleted: number;
   totalCourses: number;
-  lastActivity?: string; // Make this optional since we're removing it from display
 }
 
 interface UsersListProps {
@@ -45,60 +45,85 @@ const UsersList = ({ users: initialUsers, title }: UsersListProps) => {
   };
 
   const handleViewReport = (userId: string, userName: string) => {
-    // In a real app, this would navigate to a detailed report page
-    // For now, we'll just show a toast and log to console
     toast({
       title: "Report Opened",
       description: `Viewing report for ${userName}`,
       duration: 3000,
     });
     console.log(`Viewing report for user ID: ${userId}`);
-    // You could navigate to a report page like this:
-    // navigate(`/admin/reports/user/${userId}`);
+    navigate(`/admin/reports/user/${userId}`);
   };
 
   return (
-    <div className="space-y-4">
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="space-y-4"
+    >
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h3 className="text-lg font-medium">{title}</h3>
-        <div className="relative w-full sm:w-64">
+        <motion.h3 
+          initial={{ x: -20, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ duration: 0.4 }}
+          className="text-lg font-medium bg-gradient-to-r from-pink-300 to-purple-400 dark:from-pink-400 dark:to-purple-500 bg-clip-text text-transparent"
+        >
+          {title}
+        </motion.h3>
+        <motion.div 
+          initial={{ x: 20, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ duration: 0.4 }}
+          className="relative w-full sm:w-64"
+        >
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
           <Input
             placeholder="Search users..."
-            className="pl-8 border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-complybrand-500 transition-all"
+            className="pl-8 border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-pink-300 dark:focus:ring-purple-400 transition-all rounded-full"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-        </div>
+        </motion.div>
       </div>
 
-      <div className="border rounded-md overflow-hidden bg-card/80 backdrop-blur-sm border-border/50">
-        <div className="overflow-x-auto animate-fade-in">
+      <motion.div 
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5, delay: 0.1 }}
+        className="border rounded-xl overflow-hidden bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-pink-200 dark:border-purple-800/30 shadow-lg shadow-pink-200/10 dark:shadow-purple-900/10"
+      >
+        <div className="overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow className="bg-muted/50 hover:bg-muted/70">
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead className="hidden md:table-cell">Department</TableHead>
-                <TableHead>Progress</TableHead>
+              <TableRow className="bg-pink-50/70 dark:bg-purple-900/20 hover:bg-pink-100/70 dark:hover:bg-purple-900/30">
+                <TableHead className="font-medium text-gray-700 dark:text-gray-200">Name</TableHead>
+                <TableHead className="font-medium text-gray-700 dark:text-gray-200">Email</TableHead>
+                <TableHead className="hidden md:table-cell font-medium text-gray-700 dark:text-gray-200">Department</TableHead>
+                <TableHead className="font-medium text-gray-700 dark:text-gray-200">Progress</TableHead>
                 <TableHead className="w-[50px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredUsers.length > 0 ? (
-                filteredUsers.map((user) => (
-                  <TableRow 
-                    key={user.id} 
-                    className="hover:bg-muted/20 transition-colors animate-fade-in"
+                filteredUsers.map((user, index) => (
+                  <motion.tr 
+                    key={user.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: 0.1 * (index + 1) }}
+                    className="hover:bg-pink-50/50 dark:hover:bg-purple-900/10 transition-colors"
                   >
                     <TableCell className="font-medium">{user.name}</TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell className="hidden md:table-cell">{user.department || "-"}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <div className="flex-shrink-0 h-2 w-2 rounded-full mt-0.5 mr-1.5">
+                        <motion.div 
+                          whileHover={{ scale: 1.2 }}
+                          className="flex-shrink-0 h-2 w-2 rounded-full mt-0.5 mr-1.5"
+                        >
                           <div className={`h-2 w-2 rounded-full ${getStatusColor(user.coursesCompleted, user.totalCourses)}`}></div>
-                        </div>
+                        </motion.div>
                         <span>
                           {user.coursesCompleted}/{user.totalCourses}
                         </span>
@@ -112,36 +137,39 @@ const UsersList = ({ users: initialUsers, title }: UsersListProps) => {
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-muted/50">
+                          <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-pink-100/50 dark:hover:bg-purple-800/30 rounded-full">
                             <span className="sr-only">Open menu</span>
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="animate-scale-in">
+                        <DropdownMenuContent align="end" className="animate-scale-in bg-white/80 dark:bg-gray-800/90 backdrop-blur-md border-pink-200 dark:border-purple-800/30">
                           <DropdownMenuItem 
-                            className="cursor-pointer hover:bg-muted/80"
+                            className="cursor-pointer hover:bg-pink-50 dark:hover:bg-purple-900/20"
                             onClick={() => handleViewReport(user.id, user.name)}
                           >
-                            <FileText className="mr-2 h-4 w-4" />
+                            <FileText className="mr-2 h-4 w-4 text-pink-500 dark:text-purple-400" />
                             <span>View Report</span>
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
-                  </TableRow>
+                  </motion.tr>
                 ))
               ) : (
                 <TableRow>
                   <TableCell colSpan={5} className="h-24 text-center">
-                    No users found.
+                    <div className="flex flex-col items-center justify-center text-gray-500 dark:text-gray-400">
+                      <Search className="h-8 w-8 mb-2 opacity-40" />
+                      No users found.
+                    </div>
                   </TableCell>
                 </TableRow>
               )}
             </TableBody>
           </Table>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };
 

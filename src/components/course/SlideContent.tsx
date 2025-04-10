@@ -53,7 +53,7 @@ const SlideContent: React.FC<SlideContentProps> = ({
           <p className="text-xl font-medium dark:text-gray-200 transition-colors duration-300 mb-4">{title}</p>
           <p className="text-gray-700 dark:text-gray-300">{content}</p>
           
-          {/* Presenter avatar - positioned at bottom right */}
+          {/* Presenter avatar with simulated video */}
           <div className="absolute bottom-4 right-4">
             <AnimatePresence>
               {isPlaying && (
@@ -64,12 +64,32 @@ const SlideContent: React.FC<SlideContentProps> = ({
                   transition={{ duration: 0.3 }}
                   className="relative"
                 >
-                  <Avatar className="h-16 w-16 border-2 border-white dark:border-gray-700 shadow-lg">
-                    <AvatarImage src="/placeholder.svg" alt="Presenter" />
-                    <AvatarFallback className="bg-gradient-to-br from-pink-400 to-purple-600 text-white text-lg">
-                      P
-                    </AvatarFallback>
-                  </Avatar>
+                  <div className="relative overflow-hidden rounded-full border-2 border-white dark:border-gray-700 shadow-lg h-16 w-16">
+                    {/* Simulated video with animated gradient background */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-purple-400 via-pink-500 to-red-500 animate-pulse" />
+                    
+                    {/* Animated overlays to simulate video movement */}
+                    <motion.div 
+                      className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30"
+                      animate={{ 
+                        x: ['-100%', '100%'],
+                      }}
+                      transition={{ 
+                        repeat: Infinity, 
+                        duration: 2,
+                        ease: "linear"
+                      }}
+                    />
+                    
+                    <Avatar className="h-16 w-16 relative z-10 bg-opacity-70">
+                      <AvatarImage src="/placeholder.svg" alt="Presenter" />
+                      <AvatarFallback className="bg-gradient-to-br from-pink-400 to-purple-600 text-white text-lg">
+                        P
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
+                  
+                  {/* Video indicator */}
                   <motion.div 
                     animate={{ 
                       scale: [1, 1.05, 1],

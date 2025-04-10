@@ -1,11 +1,10 @@
-
 import { useState } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PlusCircle, CheckCircle, Users, BookOpen, BarChart } from "lucide-react";
+import { CheckCircle, Users, BookOpen, BarChart } from "lucide-react";
 import UsersList from "@/components/dashboard/UsersList";
 import CourseCard from "@/components/dashboard/CourseCard";
 
@@ -98,25 +97,20 @@ const AdminDashboard = () => {
   ).length;
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-background to-muted/30">
       <Navbar userRole="admin" />
       <main className="flex-grow pt-16">
         <div className="container mx-auto px-4 py-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Organization Admin Dashboard</h1>
-              <p className="text-gray-600">Manage your organization's compliance training</p>
+            <div className="animate-fade-in">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Organization Admin Dashboard</h1>
+              <p className="text-gray-600 dark:text-gray-400">Manage your organization's compliance training</p>
             </div>
-            <div className="flex space-x-3">
-              <Button className="bg-complybrand-700 hover:bg-complybrand-800">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Add Users
-              </Button>
-            </div>
+            {/* Removed "Add Users" button */}
           </div>
 
           <div className="grid gap-4 md:grid-cols-4 mb-8">
-            <Card>
+            <Card className="hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 overflow-hidden bg-card/50 backdrop-blur-sm border border-border/50">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
                   Total Users
@@ -124,10 +118,10 @@ const AdminDashboard = () => {
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{mockUsers.length}</div>
+                <div className="text-2xl font-bold animate-fade-in">{mockUsers.length}</div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 overflow-hidden bg-card/50 backdrop-blur-sm border border-border/50">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
                   Courses
@@ -135,10 +129,10 @@ const AdminDashboard = () => {
                 <BookOpen className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{mockCourses.length}</div>
+                <div className="text-2xl font-bold animate-fade-in">{mockCourses.length}</div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 overflow-hidden bg-card/50 backdrop-blur-sm border border-border/50">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
                   Completion Rate
@@ -146,12 +140,12 @@ const AdminDashboard = () => {
                 <CheckCircle className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">
+                <div className="text-2xl font-bold animate-fade-in">
                   {Math.round((completedCount / mockUsers.length) * 100)}%
                 </div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 overflow-hidden bg-card/50 backdrop-blur-sm border border-border/50">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
                   Training Status
@@ -176,14 +170,14 @@ const AdminDashboard = () => {
           </div>
 
           <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-            <TabsList>
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="users">Users</TabsTrigger>
-              <TabsTrigger value="courses">Courses</TabsTrigger>
+            <TabsList className="bg-muted/50 backdrop-blur-sm">
+              <TabsTrigger value="overview" className="data-[state=active]:bg-complybrand-600 data-[state=active]:text-white">Overview</TabsTrigger>
+              <TabsTrigger value="users" className="data-[state=active]:bg-complybrand-600 data-[state=active]:text-white">Users</TabsTrigger>
+              <TabsTrigger value="courses" className="data-[state=active]:bg-complybrand-600 data-[state=active]:text-white">Courses</TabsTrigger>
             </TabsList>
             
-            <TabsContent value="overview" className="space-y-4">
-              <Card>
+            <TabsContent value="overview" className="space-y-4 animate-fade-in">
+              <Card className="overflow-hidden bg-card/50 backdrop-blur-sm border border-border/50">
                 <CardHeader>
                   <CardTitle>User Completion Status</CardTitle>
                   <CardDescription>
@@ -196,14 +190,15 @@ const AdminDashboard = () => {
                     title="Recent User Activity" 
                   />
                   <div className="mt-4 flex justify-end">
-                    <Button variant="outline" onClick={() => setActiveTab("users")}>
+                    <Button variant="outline" onClick={() => setActiveTab("users")} 
+                      className="hover:bg-complybrand-600 hover:text-white transition-colors">
                       View All Users
                     </Button>
                   </div>
                 </CardContent>
               </Card>
               
-              <div className="mt-8">
+              <div className="mt-8 animate-fade-in">
                 <h3 className="text-lg font-medium mb-4">Active Courses</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {mockCourses.map((course) => (
@@ -221,8 +216,8 @@ const AdminDashboard = () => {
               </div>
             </TabsContent>
             
-            <TabsContent value="users">
-              <Card>
+            <TabsContent value="users" className="animate-fade-in">
+              <Card className="overflow-hidden bg-card/50 backdrop-blur-sm border border-border/50">
                 <CardHeader>
                   <CardTitle>Users</CardTitle>
                   <CardDescription>
@@ -238,8 +233,8 @@ const AdminDashboard = () => {
               </Card>
             </TabsContent>
             
-            <TabsContent value="courses">
-              <Card>
+            <TabsContent value="courses" className="animate-fade-in">
+              <Card className="overflow-hidden bg-card/50 backdrop-blur-sm border border-border/50">
                 <CardHeader>
                   <CardTitle>Courses</CardTitle>
                   <CardDescription>

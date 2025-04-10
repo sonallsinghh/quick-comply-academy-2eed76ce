@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
@@ -10,7 +9,6 @@ import { Award, Clock, BookOpen } from "lucide-react";
 import CourseCard from "@/components/dashboard/CourseCard";
 import CourseProgress from "@/components/dashboard/CourseProgress";
 
-// Mock data for demonstration
 const mockUser = {
   name: "Alex Johnson",
   email: "alex.johnson@company.com",
@@ -72,7 +70,6 @@ const mockProgress = [
 const UserDashboard = () => {
   const [activeTab, setActiveTab] = useState<"all" | "inProgress" | "completed">("all");
   
-  // Filter courses based on active tab
   const filteredCourses = mockCourses.filter(course => {
     if (activeTab === "all") return true;
     if (activeTab === "inProgress") return course.progress > 0 && course.progress < 100;
@@ -80,20 +77,18 @@ const UserDashboard = () => {
     return true;
   });
 
-  // Calculate overall progress
   const totalProgress = mockCourses.reduce((acc, course) => acc + course.progress, 0);
   const overallProgress = Math.round(totalProgress / mockCourses.length);
   const completedCourses = mockCourses.filter(course => course.progress === 100).length;
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-background to-muted/30">
       <Navbar userRole="employee" />
       <main className="flex-grow pt-16">
         <div className="container mx-auto px-4 py-8">
           <div className="flex flex-col lg:flex-row gap-8">
-            {/* Left sidebar with user info */}
             <div className="lg:w-1/4">
-              <Card>
+              <Card className="animate-fade-in hover:shadow-md transition-all duration-300 overflow-hidden bg-card/50 backdrop-blur-sm border border-border/50">
                 <CardHeader className="pb-2">
                   <CardTitle>Welcome back!</CardTitle>
                   <CardDescription>Your training dashboard</CardDescription>
@@ -111,10 +106,10 @@ const UserDashboard = () => {
                         <span className="text-sm text-gray-500">Overall Progress</span>
                         <span className="text-sm font-medium">{overallProgress}%</span>
                       </div>
-                      <Progress value={overallProgress} />
+                      <Progress value={overallProgress} className="h-2 bg-gray-200 dark:bg-gray-700" />
                     </div>
                     
-                    <div className="pt-2 border-t flex justify-between items-center">
+                    <div className="pt-2 border-t flex justify-between items-center hover:bg-muted/20 p-2 rounded-md transition-colors">
                       <div className="flex items-center">
                         <BookOpen className="h-4 w-4 mr-2 text-gray-500" />
                         <span className="text-sm">Total Courses</span>
@@ -122,7 +117,7 @@ const UserDashboard = () => {
                       <span className="font-medium">{mockCourses.length}</span>
                     </div>
                     
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center hover:bg-muted/20 p-2 rounded-md transition-colors">
                       <div className="flex items-center">
                         <Award className="h-4 w-4 mr-2 text-gray-500" />
                         <span className="text-sm">Completed</span>
@@ -130,7 +125,7 @@ const UserDashboard = () => {
                       <span className="font-medium">{completedCourses}</span>
                     </div>
                     
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center hover:bg-muted/20 p-2 rounded-md transition-colors">
                       <div className="flex items-center">
                         <Clock className="h-4 w-4 mr-2 text-gray-500" />
                         <span className="text-sm">Due Soon</span>
@@ -141,7 +136,7 @@ const UserDashboard = () => {
                 </CardContent>
               </Card>
               
-              <div className="mt-6 space-y-4">
+              <div className="mt-6 space-y-4 animate-fade-in">
                 <h3 className="font-medium text-lg">Course Progress</h3>
                 {mockProgress.map((course, index) => (
                   <CourseProgress
@@ -157,29 +152,28 @@ const UserDashboard = () => {
               </div>
             </div>
             
-            {/* Main content area */}
-            <div className="lg:w-3/4">
+            <div className="lg:w-3/4 animate-fade-in">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
                 <h1 className="text-2xl font-bold">Your Courses</h1>
                 <div className="mt-4 md:mt-0 flex space-x-2">
                   <Button 
                     variant={activeTab === "all" ? "default" : "outline"} 
                     onClick={() => setActiveTab("all")}
-                    className={activeTab === "all" ? "bg-complybrand-700" : ""}
+                    className={`transition-all duration-200 ${activeTab === "all" ? "bg-complybrand-700 hover:bg-complybrand-800" : "hover:bg-muted/20"}`}
                   >
                     All
                   </Button>
                   <Button 
                     variant={activeTab === "inProgress" ? "default" : "outline"} 
                     onClick={() => setActiveTab("inProgress")}
-                    className={activeTab === "inProgress" ? "bg-complybrand-700" : ""}
+                    className={`transition-all duration-200 ${activeTab === "inProgress" ? "bg-complybrand-700 hover:bg-complybrand-800" : "hover:bg-muted/20"}`}
                   >
                     In Progress
                   </Button>
                   <Button 
                     variant={activeTab === "completed" ? "default" : "outline"} 
                     onClick={() => setActiveTab("completed")}
-                    className={activeTab === "completed" ? "bg-complybrand-700" : ""}
+                    className={`transition-all duration-200 ${activeTab === "completed" ? "bg-complybrand-700 hover:bg-complybrand-800" : "hover:bg-muted/20"}`}
                   >
                     Completed
                   </Button>
@@ -201,7 +195,7 @@ const UserDashboard = () => {
                   ))}
                 </div>
               ) : (
-                <Card>
+                <Card className="animate-fade-in overflow-hidden bg-card/50 backdrop-blur-sm border border-border/50">
                   <CardContent className="flex flex-col items-center justify-center p-6">
                     <BookOpen className="h-12 w-12 text-gray-300 mb-4" />
                     <h3 className="text-xl font-medium">No courses found</h3>
@@ -213,8 +207,8 @@ const UserDashboard = () => {
               )}
               
               {activeTab === "completed" && completedCourses > 0 && (
-                <div className="mt-8">
-                  <Card>
+                <div className="mt-8 animate-fade-in">
+                  <Card className="overflow-hidden bg-card/50 backdrop-blur-sm border border-border/50">
                     <CardHeader>
                       <CardTitle>Your Certificates</CardTitle>
                       <CardDescription>
@@ -226,12 +220,12 @@ const UserDashboard = () => {
                         {mockCourses
                           .filter(course => course.progress === 100)
                           .map((course) => (
-                            <div key={course.id} className="flex justify-between items-center p-4 border rounded-md">
+                            <div key={course.id} className="flex justify-between items-center p-4 border rounded-md hover:bg-muted/20 transition-all duration-200">
                               <div>
                                 <h4 className="font-medium">{course.title}</h4>
                                 <p className="text-sm text-gray-500">Completed on April 2, 2023</p>
                               </div>
-                              <Button variant="outline">
+                              <Button variant="outline" className="hover:bg-complybrand-600 hover:text-white transition-colors">
                                 Download
                               </Button>
                             </div>

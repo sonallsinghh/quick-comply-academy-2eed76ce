@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
@@ -8,10 +7,10 @@ const Hero = () => {
     <div className="relative overflow-hidden pt-16 bg-gradient-to-b from-white to-gray-100 dark:from-gray-900 dark:to-gray-950">
       {/* Full-screen background image with overlay */}
       <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-transparent dark:from-black/80 dark:via-black/60 z-10"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-transparent dark:from-black/70 dark:via-black/50 z-10"></div>
         <img 
-          src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=2670"
-          alt="Compliance Training" 
+          src="https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&q=80&w=2670"
+          alt="Corporate Office" 
           className="w-full h-full object-cover animate-[pulse_10s_ease-in-out_infinite]"
         />
       </div>
@@ -95,13 +94,13 @@ const Hero = () => {
                     animate={{ filter: "blur(0px)" }}
                     transition={{ duration: 1 }}
                     className="w-full transition-opacity duration-300"
-                    src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=2670"
-                    alt="CompliQuick Dashboard"
+                    src="https://i.pinimg.com/736x/21/b7/a8/21b7a887e7ad97a67acb15eabb1279c6.jpg"
+                    alt="Compliance Overview"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent flex items-end p-6">
                     <div className="text-white">
-                      <h3 className="text-xl font-semibold mb-2">Simplified Training Process</h3>
-                      <p className="text-sm text-gray-200">Watch how CompliQuick transforms compliance training</p>
+                      <h3 className="text-xl font-semibold mb-2">Comprehensive Compliance Solutions</h3>
+                      <p className="text-sm text-gray-200">See how we simplify regulations, policies, and governance</p>
                     </div>
                   </div>
                   <div className="absolute inset-0 flex items-center justify-center">

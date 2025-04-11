@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -20,7 +19,7 @@ export default {
 		},
 		extend: {
 			fontFamily: {
-				sans: ['DM Sans', 'sans-serif'],
+				sans: ['Poppins', 'Inter', 'DM Sans', 'sans-serif'],
 				serif: ['Playfair Display', 'serif'],
 			},
 			colors: {
@@ -87,11 +86,14 @@ export default {
 					peach: '#fde1d3'
 				},
 				dark: {
-					charcoal: '#1a1625',
-					midnight: '#0c1021',
+					charcoal: '#1A1A1A',
+					midnight: '#0F0F0F',
 					black: '#000000e6',
-					purple: '#9b87f5',
-					blue: '#1EAEDB'
+					beige: '#D2C0A3',
+					tan: '#D6C8B4',
+					gray: '#B4B4B4',
+					text: '#E0E0E0',
+					secondaryText: '#A8A8A8'
 				}
 			},
 			borderRadius: {
@@ -178,6 +180,10 @@ export default {
 				'scale-in': 'scale-in 0.3s ease-out',
 				'float': 'float 3s ease-in-out infinite',
 				'pulse-soft': 'pulse-soft 2s ease-in-out infinite'
+			},
+			boxShadow: {
+				'elegant': '0 5px 15px rgba(0,0,0,0.05)',
+				'elegant-hover': '0 8px 25px rgba(0,0,0,0.1)',
 			}
 		}
 	},

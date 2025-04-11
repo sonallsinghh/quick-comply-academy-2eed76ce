@@ -5,7 +5,7 @@
 
 @layer base {
   :root {
-    /* Light theme */
+    /* Light theme - keep existing code */
     --background: 280 25% 98%;
     --foreground: 222.2 84% 4.9%;
 
@@ -47,43 +47,43 @@
   }
 
   .dark {
-    /* Dark theme */
-    --background: 240 10% 8%;
-    --foreground: 210 40% 98%;
+    /* New dark theme - elegant, corporate look */
+    --background: 0 0% 10%; /* #1A1A1A */
+    --foreground: 0 0% 88%; /* #E0E0E0 */
 
-    --card: 240 10% 10%;
-    --card-foreground: 210 40% 98%;
+    --card: 0 0% 6%; /* #0F0F0F */
+    --card-foreground: 0 0% 88%; /* #E0E0E0 */
 
-    --popover: 240 10% 10%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 6%; /* #0F0F0F */
+    --popover-foreground: 0 0% 88%; /* #E0E0E0 */
 
-    --primary: 267 67% 32%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 36 30% 74%; /* #D2C0A3 - muted beige */
+    --primary-foreground: 0 0% 10%; /* #1A1A1A */
 
-    --secondary: 240 5% 20%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 0 0% 13%; /* #212121 - slightly lighter than background */
+    --secondary-foreground: 0 0% 88%; /* #E0E0E0 */
 
-    --muted: 240 5% 15%;
-    --muted-foreground: 215 20.2% 70%;
+    --muted: 0 0% 15%; /* #262626 */
+    --muted-foreground: 0 0% 66%; /* #A8A8A8 */
 
-    --accent: 239 84% 67%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 36 32% 76%; /* #D6C8B4 - warm tan/beige */
+    --accent-foreground: 0 0% 10%; /* #1A1A1A */
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%; /* Keep existing destructive */
+    --destructive-foreground: 0 0% 88%; /* #E0E0E0 */
 
-    --border: 240 5% 18%;
-    --input: 240 5% 18%;
-    --ring: 267 67% 42%;
+    --border: 0 0% 20%; /* #333333 */
+    --input: 0 0% 20%; /* #333333 */
+    --ring: 36 30% 74%; /* #D2C0A3 - muted beige */
 
-    --sidebar-background: 240 10% 8%; 
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 267 67% 42%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 5% 20%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 5% 16%;
-    --sidebar-ring: 267 67% 60%;
+    --sidebar-background: 0 0% 6%; /* #0F0F0F */
+    --sidebar-foreground: 0 0% 88%; /* #E0E0E0 */
+    --sidebar-primary: 36 30% 74%; /* #D2C0A3 */
+    --sidebar-primary-foreground: 0 0% 10%; /* #1A1A1A */
+    --sidebar-accent: 0 0% 13%; /* #212121 */
+    --sidebar-accent-foreground: 0 0% 88%; /* #E0E0E0 */
+    --sidebar-border: 0 0% 20%; /* #333333 */
+    --sidebar-ring: 36 30% 65%; /* slightly darker D2C0A3 */
   }
 }
 
@@ -138,7 +138,23 @@
   }
   
   .text-gradient-dark {
-    @apply bg-gradient-to-r from-pink-300 to-purple-400 bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent;
+  }
+  
+  /* New elegant hover effect */
+  .elegant-hover {
+    @apply transition-all duration-300;
+    box-shadow: 0 0 0 rgba(0,0,0,0);
+  }
+  
+  .elegant-hover:hover {
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    @apply dark:shadow-accent/10;
+  }
+  
+  /* Corporate style card */
+  .corporate-card {
+    @apply bg-white dark:bg-card border dark:border-border/50 shadow-sm hover:shadow-md transition-all duration-300;
   }
 }
 
@@ -159,3 +175,4 @@
     opacity: 0.7;
   }
 }
+

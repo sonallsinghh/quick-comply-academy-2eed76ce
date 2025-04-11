@@ -25,7 +25,7 @@ export function ThemeToggle() {
       size="sm"
       onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
       aria-label="Toggle theme"
-      className="relative overflow-hidden rounded-full w-10 h-10 p-0 backdrop-blur-md bg-white/30 dark:bg-gray-900/30 hover:bg-white/50 dark:hover:bg-gray-900/50 border border-pink-100/50 dark:border-purple-900/30 shadow-md"
+      className="relative overflow-hidden rounded-full w-10 h-10 p-0 backdrop-blur-md bg-white/30 dark:bg-dark-midnight/40 hover:bg-white/50 dark:hover:bg-dark-charcoal/50 border border-gray-100/50 dark:border-dark-secondaryText/20 shadow-md"
     >
       <span className="sr-only">{theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}</span>
       
@@ -39,11 +39,11 @@ export function ThemeToggle() {
             transition={{ duration: 0.3, ease: "easeInOut" }}
             className="absolute inset-0 flex items-center justify-center"
           >
-            <Moon className="h-5 w-5 text-purple-300" />
+            <Moon className="h-5 w-5 text-dark-tan" />
             <motion.div
               animate={{ scale: [1, 1.1, 1], opacity: [0.7, 0.2, 0.7] }}
               transition={{ duration: 3, repeat: Infinity }}
-              className="absolute h-8 w-8 rounded-full bg-purple-400/10"
+              className="absolute h-8 w-8 rounded-full bg-dark-tan/10"
             />
           </motion.div>
         ) : (
@@ -76,7 +76,7 @@ export function ThemeToggle() {
         transition={{ duration: 0.3 }}
         className="absolute inset-0 flex items-center justify-center"
       >
-        <Sparkles className="h-4 w-4 text-pink-400 dark:text-purple-400" />
+        <Sparkles className="h-4 w-4 text-pink-400 dark:text-dark-beige" />
       </motion.div>
     </Button>
   );

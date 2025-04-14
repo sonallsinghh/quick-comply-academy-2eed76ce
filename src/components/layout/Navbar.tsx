@@ -158,6 +158,10 @@ const Navbar = ({ userRole, onLogin }: NavbarProps) => {
     setDomainLoginStep("domain");
   };
 
+  const handleGoogleLogin = () => {
+    window.location.href = `${import.meta.env.VITE_BACKEND_URL}/api/auth/google`;
+  };
+
   return (
     <nav className="bg-white dark:bg-gray-900 shadow-sm fixed w-full top-0 z-50 animate-fade-in">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -473,11 +477,11 @@ const Navbar = ({ userRole, onLogin }: NavbarProps) => {
             <div className="flex flex-col sm:flex-row gap-2">
               <Button 
                 variant="outline" 
-                onClick={() => handleLogin("sso")}
+                onClick={handleGoogleLogin}
                 className="flex items-center gap-1"
               >
                 <Mail className="h-4 w-4" />
-                Login with SSO
+                Login with Google
               </Button>
               <Button onClick={() => handleLogin()} className="bg-complybrand-700 hover:bg-complybrand-800">Login</Button>
             </div>

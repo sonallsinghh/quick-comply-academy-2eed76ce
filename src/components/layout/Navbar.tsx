@@ -57,11 +57,11 @@ const Navbar = ({ userRole, onLogin }: NavbarProps) => {
     
     try {
       const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/google`, {
-        method: 'POST',
+        method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ domain: credentials.domain })
+        // body: JSON.stringify({ domain: credentials.domain })
       });
 
       if (!response.ok) {

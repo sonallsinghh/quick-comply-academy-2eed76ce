@@ -4,9 +4,10 @@ import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CheckCircle, Users, BookOpen, BarChart } from "lucide-react";
+import { CheckCircle, Users, BookOpen, BarChart, Settings } from "lucide-react";
 import UsersList from "@/components/dashboard/UsersList";
 import CourseCard from "@/components/dashboard/CourseCard";
+import AddTenantDetailsForm from "@/components/forms/AddTenantDetailsForm";
 
 // Mock data for demonstration
 const mockCourses = [
@@ -83,6 +84,8 @@ const mockUsers = [
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
+  const [tenantDetailsDialogOpen, setTenantDetailsDialogOpen] = useState(false);
+  const [selectedTenantId, setSelectedTenantId] = useState<string | null>(null);
 
   const completedCount = mockUsers.filter(
     (user) => user.coursesCompleted === user.totalCourses
@@ -106,7 +109,18 @@ const AdminDashboard = () => {
               <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Organization Admin Dashboard</h1>
               <p className="text-gray-600 dark:text-gray-400">Manage your organization's compliance training</p>
             </div>
-            {/* Removed "Add Users" button */}
+            <div className="flex space-x-3 animate-fade-in">
+              <Button 
+                className="bg-complybrand-700 hover:bg-complybrand-800 hover:shadow-lg transition-all duration-300"
+                onClick={() => {
+                  setSelectedTenantId("current-tenant-id"); // Replace with actual tenant ID
+                  setTenantDetailsDialogOpen(true);
+                }}
+              >
+                <Settings className="mr-2 h-4 w-4" />
+                Organization Settings
+              </Button>
+            </div>
           </div>
 
           <div className="grid gap-4 md:grid-cols-4 mb-8">
@@ -261,6 +275,13 @@ const AdminDashboard = () => {
           </Tabs>
         </div>
       </main>
+
+      <AddTenantDetailsForm
+        open={tenantDetailsDialogOpen}
+        onOpenChange={setTenantDetailsDialogOpen}
+        tenantId={selectedTenantId || ""}
+      />
+
       <Footer />
     </div>
   );

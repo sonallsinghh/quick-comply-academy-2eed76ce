@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -42,7 +41,7 @@ const Navbar = ({ userRole, onLogin }: NavbarProps) => {
     setCredentials(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleDomainSubmit = () => {
+  const handleDomainSubmit = async () => {
     if (!credentials.domain) {
       setErrorMessage("Please enter your company domain");
       setErrorDialogOpen(true);
@@ -56,11 +55,27 @@ const Navbar = ({ userRole, onLogin }: NavbarProps) => {
       return;
     }
     
-    setDomainLoginStep("credentials");
+    try {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/google`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ domain: credentials.domain })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to verify domain');
+      }
+
+      setDomainLoginStep("credentials");
+    } catch (error) {
+      setErrorMessage("Failed to verify domain. Please try again.");
+      setErrorDialogOpen(true);
+    }
   };
 
-  // Mock login handler for demonstration purposes
-  const handleLogin = (type: "sso" | "credentials" = "credentials") => {
+  const handleLogin = async (type: "sso" | "credentials" = "credentials") => {
     if (loginType === "employee" && type === "sso") {
       // Mock SSO login for employees
       toast.success(`Redirecting to SSO provider for ${credentials.domain || "your company"}...`);
@@ -73,47 +88,69 @@ const Navbar = ({ userRole, onLogin }: NavbarProps) => {
       return;
     }
     
-    if (loginType === "admin" && credentials.email && credentials.password) {
-      // Mock credential validation logic for admin/superuser
-      if (credentials.email === "admin@example.com" && credentials.password === "admin123") {
-        if (onLogin) {
-          onLogin("admin");
-          window.location.href = "/admin/dashboard";
-          setLoginDialogOpen(false);
+    if (loginType === "admin" && credentials.email && credentials.password && credentials.domain) {
+      try {
+        // Clean up domain input - remove any whitespace and convert to lowercase
+        const cleanDomain = credentials.domain.trim().toLowerCase();
+        
+        const requestBody = {
+          email: credentials.email.trim().toLowerCase(),
+          password: credentials.password,
+          domain: cleanDomain
+        };
+
+        console.log('Login Request Details:', {
+          url: `${import.meta.env.VITE_BACKEND_URL}/api/auth/login`,
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: requestBody
+        });
+
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/login`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: JSON.stringify(requestBody)
+        });
+
+        console.log('Response Status:', response.status);
+        console.log('Response Headers:', Object.fromEntries(response.headers.entries()));
+        
+        const responseData = await response.json();
+        console.log('Response Data:', responseData);
+
+        if (!response.ok) {
+          throw new Error(responseData.error || 'Login failed');
         }
-      } else if (credentials.email === "super@example.com" && credentials.password === "super123") {
+        
+        // Store the token in localStorage
+        localStorage.setItem('token', responseData.token);
+        
+        // Call the onLogin callback with the user role
         if (onLogin) {
-          onLogin("superuser");
-          window.location.href = "/superuser/dashboard";
-          setLoginDialogOpen(false);
+          onLogin(responseData.user.role.toLowerCase());
+          
+          // Redirect based on role
+          if (responseData.user.role === 'SUPER_ADMIN') {
+            window.location.href = "/superuser/dashboard";
+          } else if (responseData.user.role === 'ADMIN') {
+            window.location.href = "/admin/dashboard";
+          }
         }
-      } else {
-        // Show error for invalid credentials
-        setErrorMessage("Invalid email or password. Please try again.");
+        
+        setLoginDialogOpen(false);
+      } catch (error) {
+        console.error('Login error:', error);
+        setErrorMessage(error instanceof Error ? error.message : "Login failed. Please try again.");
         setErrorDialogOpen(true);
       }
-    } else if (loginType === "employee" && credentials.email && credentials.password) {
-      // For employee login, check if email matches the domain
-      const emailDomain = credentials.email.split('@')[1];
-      
-      if (emailDomain !== credentials.domain) {
-        setErrorMessage(`Please use an email address from the ${credentials.domain} domain`);
-        setErrorDialogOpen(true);
-        return;
-      }
-      
-      // Mock credential validation for employees
-      if (credentials.email.includes("@") && credentials.password.length >= 6) {
-        if (onLogin) {
-          onLogin("employee");
-          window.location.href = "/dashboard";
-          setLoginDialogOpen(false);
-        }
-      } else {
-        // Show error for invalid employee credentials
-        setErrorMessage("Invalid email or password. Please try again.");
-        setErrorDialogOpen(true);
-      }
+    } else {
+      setErrorMessage("Please fill in all fields");
+      setErrorDialogOpen(true);
     }
   };
 
@@ -288,11 +325,28 @@ const Navbar = ({ userRole, onLogin }: NavbarProps) => {
                 id="email" 
                 name="email"
                 type="email" 
-                placeholder="admin@example.com" 
+                placeholder="admin@yourorg.com" 
                 value={credentials.email}
                 onChange={handleCredentialChange}
                 autoComplete="email"
               />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="domain">Domain</Label>
+              <div className="flex">
+                <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground">
+                  <AtSign className="h-4 w-4" />
+                </span>
+                <Input 
+                  id="domain" 
+                  name="domain"
+                  type="text" 
+                  placeholder="yourorg.com" 
+                  value={credentials.domain}
+                  onChange={handleCredentialChange}
+                  className="rounded-l-none"
+                />
+              </div>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="password">Password</Label>

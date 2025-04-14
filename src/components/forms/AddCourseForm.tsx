@@ -1,9 +1,7 @@
-
 import React, { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { BookOpen, FileText, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -14,28 +12,28 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const ACCEPTED_FILE_TYPES = ["application/pdf", "application/vnd.ms-powerpoint", "application/vnd.openxmlformats-officedocument.presentationml.presentation"];
-
+// Define the form schema with validations
 const courseFormSchema = z.object({
-  title: z.string().min(3, { message: "Course title is required" }),
-  description: z.string().min(10, { message: "Please provide a more detailed description" }),
+  title: z.string().min(2, { message: "Title is required" }),
+  description: z.string().min(10, { message: "Description is required" }),
   duration: z.string().min(1, { message: "Duration is required" }),
-  tags: z.string().optional(),
-  objectives: z.string().optional(),
-  targetAudience: z.string().optional(),
+  tags: z.string().min(1, { message: "Tags are required" }),
+  learningObjectives: z.string().min(1, { message: "Learning objectives are required" }),
+  targetAudience: z.string().min(1, { message: "Target audience is required" }),
+  courseMaterial: z.any().refine((file) => file instanceof File, {
+    message: "Course material is required",
+  }),
 });
 
 type CourseFormValues = z.infer<typeof courseFormSchema>;
@@ -43,14 +41,15 @@ type CourseFormValues = z.infer<typeof courseFormSchema>;
 interface AddCourseFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onCourseCreated?: () => void;
 }
 
 const AddCourseForm: React.FC<AddCourseFormProps> = ({
   open,
   onOpenChange,
+  onCourseCreated,
 }) => {
-  const [files, setFiles] = useState<File[]>([]);
-  const [fileError, setFileError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<CourseFormValues>({
     resolver: zodResolver(courseFormSchema),
@@ -59,49 +58,46 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({
       description: "",
       duration: "",
       tags: "",
-      objectives: "",
+      learningObjectives: "",
       targetAudience: "",
+      courseMaterial: null,
     },
   });
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFileError(null);
-    const selectedFiles = e.target.files;
-    
-    if (!selectedFiles || selectedFiles.length === 0) return;
-    
-    const file = selectedFiles[0];
-    
-    // Validate file size
-    if (file.size > MAX_FILE_SIZE) {
-      setFileError("File size should be less than 5MB");
-      return;
-    }
-    
-    // Validate file type
-    if (!ACCEPTED_FILE_TYPES.includes(file.type)) {
-      setFileError("Only PDF and PowerPoint files are accepted");
-      return;
-    }
-    
-    setFiles([file]);
-  };
+  async function onSubmit(data: CourseFormValues) {
+    setIsLoading(true);
+    try {
+      const formData = new FormData();
+      
+      // Append all form fields to FormData
+      formData.append('title', data.title);
+      formData.append('description', data.description);
+      formData.append('duration', data.duration);
+      formData.append('tags', data.tags);
+      formData.append('learningObjectives', data.learningObjectives);
+      formData.append('targetAudience', data.targetAudience);
+      formData.append('courseMaterial', data.courseMaterial);
 
-  function onSubmit(data: CourseFormValues) {
-    if (files.length === 0) {
-      setFileError("Please upload course materials");
-      return;
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/courses`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to create course');
+      }
+
+      toast.success("Course created successfully!");
+      onOpenChange(false);
+      form.reset();
+      onCourseCreated?.();
+    } catch (error) {
+      console.error('Error creating course:', error);
+      toast.error(error instanceof Error ? error.message : "Failed to create course. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
-    
-    const courseData = {
-      ...data,
-      files,
-    };
-    
-    console.log("Course form submitted:", courseData);
-    // Here you would typically save the data to your backend
-    toast.success("Course added successfully!");
-    onOpenChange(false);
   }
 
   return (
@@ -110,28 +106,21 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">Add New Course</DialogTitle>
           <DialogDescription>
-            Create a new compliance training course for your organizations.
+            Fill in the course details and upload the course material.
           </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 py-4">
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <h3 className="text-lg font-semibold">Course Details</h3>
-                <div className="h-px bg-border" />
-              </div>
-
+            <div className="grid gap-6">
               <FormField
                 control={form.control}
                 name="title"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex items-center gap-2">
-                      <BookOpen className="h-4 w-4" /> Course Title
-                    </FormLabel>
+                    <FormLabel>Course Title</FormLabel>
                     <FormControl>
-                      <Input placeholder="Data Privacy Compliance" {...field} />
+                      <Input placeholder="Enter course title" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -143,80 +132,60 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex items-center gap-2">
-                      <FileText className="h-4 w-4" /> Course Description
-                    </FormLabel>
+                    <FormLabel>Course Description</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Comprehensive training on GDPR, CCPA and other privacy regulations..."
-                        className="min-h-24 resize-none"
+                        placeholder="Enter course description"
+                        className="min-h-[100px]"
                         {...field}
                       />
                     </FormControl>
-                    <FormDescription>
-                      Provide a detailed description of what the course covers.
-                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              <div className="grid gap-6 md:grid-cols-2">
-                <FormField
-                  control={form.control}
-                  name="duration"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Duration</FormLabel>
-                      <FormControl>
-                        <Input placeholder="2 hours" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="tags"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tags</FormLabel>
-                      <FormControl>
-                        <Input placeholder="privacy, compliance, GDPR" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Comma separated keywords
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <h3 className="text-lg font-semibold">Course Content</h3>
-                <div className="h-px bg-border" />
-              </div>
+              <FormField
+                control={form.control}
+                name="duration"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Duration (in minutes)</FormLabel>
+                    <FormControl>
+                      <Input type="number" placeholder="Enter duration in minutes" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <FormField
                 control={form.control}
-                name="objectives"
+                name="tags"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Learning Objectives</FormLabel>
+                    <FormLabel>Tags (comma-separated)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., compliance, training, legal" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="learningObjectives"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Learning Objectives (comma-separated)</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="1. Understand core privacy principles 2. Learn about compliance requirements"
-                        className="min-h-24 resize-none"
+                        placeholder="Enter learning objectives, one per line"
+                        className="min-h-[100px]"
                         {...field}
                       />
                     </FormControl>
-                    <FormDescription>
-                      List the key learning objectives of this course.
-                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -227,55 +196,38 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({
                 name="targetAudience"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Target Audience</FormLabel>
+                    <FormLabel>Target Audience (comma-separated)</FormLabel>
                     <FormControl>
-                      <Input placeholder="All employees, HR team, IT department" {...field} />
+                      <Input placeholder="e.g., employees, managers, HR" {...field} />
                     </FormControl>
-                    <FormDescription>
-                      Who should take this course?
-                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              <div className="space-y-2">
-                <FormLabel className="flex items-center gap-2">
-                  <Upload className="h-4 w-4" /> Course Materials
-                </FormLabel>
-                <div className="grid w-full items-center gap-1.5">
-                  <label htmlFor="course-file" className="cursor-pointer flex items-center justify-center w-full h-32 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors">
-                    <div className="text-center flex flex-col items-center space-y-2">
-                      <Upload className="h-10 w-10 text-muted-foreground" />
-                      <div>
-                        <p className="text-sm font-medium">
-                          {files.length > 0 ? files[0].name : "Click to upload course material"}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          PDF or PowerPoint (max 5MB)
-                        </p>
-                      </div>
-                    </div>
-                    <Input
-                      id="course-file"
-                      type="file"
-                      className="hidden"
-                      accept=".pdf,.ppt,.pptx"
-                      onChange={handleFileChange}
-                    />
-                  </label>
-                  {fileError && (
-                    <p className="text-sm font-medium text-destructive">
-                      {fileError}
-                    </p>
-                  )}
-                  {files.length > 0 && (
-                    <p className="text-xs text-muted-foreground">
-                      File size: {(files[0].size / 1024 / 1024).toFixed(2)} MB
-                    </p>
-                  )}
-                </div>
-              </div>
+              <FormField
+                control={form.control}
+                name="courseMaterial"
+                render={({ field: { value, onChange, ...field } }) => (
+                  <FormItem>
+                    <FormLabel>Course Material (PDF or PPTX)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="file"
+                        accept=".pdf,.pptx"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            onChange(file);
+                          }
+                        }}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
 
             <DialogFooter>
@@ -283,14 +235,16 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
+                disabled={isLoading}
               >
                 Cancel
               </Button>
               <Button 
                 type="submit" 
                 className="bg-complybrand-700 hover:bg-complybrand-800"
+                disabled={isLoading}
               >
-                Create Course
+                {isLoading ? "Creating..." : "Create Course"}
               </Button>
             </DialogFooter>
           </form>

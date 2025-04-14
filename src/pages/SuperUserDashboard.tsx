@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -10,106 +9,147 @@ import UsersList from "@/components/dashboard/UsersList";
 import CourseCard from "@/components/dashboard/CourseCard";
 import AddOrganizationForm from "@/components/forms/AddOrganizationForm";
 import AddCourseForm from "@/components/forms/AddCourseForm";
+import { toast } from "sonner";
 
-// Mock data for demonstration
-const mockOrganizations = [
-  {
-    id: "1",
-    name: "Acme Corp",
-    users: 156,
-    courses: 5,
-    lastActivity: "Today"
-  },
-  {
-    id: "2",
-    name: "TechStart Inc",
-    users: 89,
-    courses: 4,
-    lastActivity: "Yesterday"
-  },
-  {
-    id: "3",
-    name: "Global Finance LLC",
-    users: 243,
-    courses: 7,
-    lastActivity: "3 days ago"
-  }
-];
+interface Course {
+  id: string;
+  title: string;
+  description: string;
+  duration: number;
+  tags: string[];
+  learningObjectives: string[];
+  targetAudience: string[];
+  materialUrl: string;
+  createdAt: string;
+}
 
-const mockCourses = [
-  {
-    id: "1",
-    title: "Data Privacy Compliance",
-    description: "Essential training for GDPR, CCPA and other privacy regulations",
-    duration: "2 hours",
-    enrolledCount: 425
-  },
-  {
-    id: "2",
-    title: "Information Security Basics",
-    description: "Fundamentals of information security for all employees",
-    duration: "1.5 hours",
-    enrolledCount: 512
-  },
-  {
-    id: "3",
-    title: "Anti-Harassment Training",
-    description: "Creating a respectful workplace environment",
-    duration: "45 minutes",
-    enrolledCount: 318
-  },
-  {
-    id: "4",
-    title: "Ethical Business Conduct",
-    description: "Understanding ethical responsibilities in business decisions",
-    duration: "1 hour",
-    enrolledCount: 287
-  }
-];
+interface Tenant {
+  id: string;
+  name: string;
+  domain: string;
+  adminEmail: string;
+  details?: {
+    presidingOfficerEmail?: string;
+    poshCommitteeEmail?: string;
+    hrContactName?: string;
+    hrContactEmail?: string;
+    hrContactPhone?: string;
+    ceoName?: string;
+    ceoEmail?: string;
+    ceoContact?: string;
+    ctoName?: string;
+    ctoEmail?: string;
+    ctoContact?: string;
+    ccoEmail?: string;
+    ccoContact?: string;
+    croName?: string;
+    croEmail?: string;
+    croContact?: string;
+    legalOfficerName?: string;
+    legalOfficerEmail?: string;
+    legalOfficerContact?: string;
+  };
+  users?: {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+  }[];
+  courses?: {
+    id: string;
+    title: string;
+  }[];
+}
 
-const mockUsers = [
-  {
-    id: "1",
-    name: "John Smith",
-    email: "john.smith@acme.com",
-    department: "Marketing",
-    coursesCompleted: 3,
-    totalCourses: 3,
-    lastActivity: "Today"
-  },
-  {
-    id: "2",
-    name: "Sarah Johnson",
-    email: "sarah.j@techstart.com",
-    department: "Engineering",
-    coursesCompleted: 2,
-    totalCourses: 4,
-    lastActivity: "Yesterday"
-  },
-  {
-    id: "3",
-    name: "Robert Williams",
-    email: "r.williams@globalfinance.com",
-    department: "Finance",
-    coursesCompleted: 5,
-    totalCourses: 7,
-    lastActivity: "3 days ago"
-  },
-  {
-    id: "4",
-    name: "Lisa Brown",
-    email: "lisa.b@acme.com",
-    department: "Human Resources",
-    coursesCompleted: 3,
-    totalCourses: 3,
-    lastActivity: "1 week ago"
-  }
-];
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  department: string;
+  coursesCompleted: number;
+  totalCourses: number;
+  lastActivity: string;
+  role?: string;
+  status?: string;
+}
 
 const SuperUserDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [organizationDialogOpen, setOrganizationDialogOpen] = useState(false);
   const [courseDialogOpen, setCourseDialogOpen] = useState(false);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch courses
+        const coursesResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/courses`);
+        if (!coursesResponse.ok) {
+          throw new Error('Failed to fetch courses');
+        }
+        const coursesData = await coursesResponse.json();
+        setCourses(coursesData);
+
+        // Fetch tenants
+        const tenantsResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/tenants`);
+        if (!tenantsResponse.ok) {
+          throw new Error('Failed to fetch tenants');
+        }
+        const tenantsData = await tenantsResponse.json();
+        setTenants(tenantsData);
+
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        setError('Failed to load data');
+        toast.error('Failed to load data. Please try again later.');
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const handleCourseCreated = () => {
+    // Refresh courses after a new one is created
+    const fetchCourses = async () => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/courses`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch courses');
+        }
+        const data = await response.json();
+        setCourses(data);
+      } catch (error) {
+        console.error('Error fetching courses:', error);
+        toast.error('Failed to refresh courses');
+      }
+    };
+
+    fetchCourses();
+  };
+
+  const handleOrganizationCreated = () => {
+    // Refresh tenants after a new one is created
+    const fetchTenants = async () => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/tenants`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch tenants');
+        }
+        const data = await response.json();
+        setTenants(data);
+      } catch (error) {
+        console.error('Error fetching tenants:', error);
+        toast.error('Failed to refresh tenants');
+      }
+    };
+
+    fetchTenants();
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-background to-muted/30">
@@ -148,9 +188,9 @@ const SuperUserDashboard = () => {
                 <Building className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold animate-fade-in">{mockOrganizations.length}</div>
+                <div className="text-2xl font-bold animate-fade-in">{tenants.length}</div>
                 <p className="text-xs text-muted-foreground">
-                  +1 from last month
+                  {tenants.length > 0 ? `+${tenants.length} from last month` : 'No organizations yet'}
                 </p>
               </CardContent>
             </Card>
@@ -162,9 +202,9 @@ const SuperUserDashboard = () => {
                 <BookOpen className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold animate-fade-in">{mockCourses.length}</div>
+                <div className="text-2xl font-bold animate-fade-in">{courses.length}</div>
                 <p className="text-xs text-muted-foreground">
-                  +2 from last month
+                  {courses.length > 0 ? `+${courses.length} from last month` : 'No courses yet'}
                 </p>
               </CardContent>
             </Card>
@@ -177,7 +217,7 @@ const SuperUserDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold animate-fade-in">
-                  {mockOrganizations.reduce((acc, org) => acc + org.users, 0)}
+                  {tenants.reduce((acc, tenant) => acc + (tenant.users?.length || 0), 0)}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   +43 from last month
@@ -196,17 +236,31 @@ const SuperUserDashboard = () => {
             
             <TabsContent value="overview" className="space-y-4 animate-fade-in">
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {mockCourses.slice(0, 3).map((course) => (
-                  <CourseCard
-                    key={course.id}
-                    id={course.id}
-                    title={course.title}
-                    description={course.description}
-                    duration={course.duration}
-                    enrolledCount={course.enrolledCount}
-                    userRole="superuser"
-                  />
-                ))}
+                {isLoading ? (
+                  <div className="col-span-full text-center py-8">
+                    <p className="text-muted-foreground">Loading courses...</p>
+                  </div>
+                ) : error ? (
+                  <div className="col-span-full text-center py-8">
+                    <p className="text-destructive">{error}</p>
+                  </div>
+                ) : courses.length > 0 ? (
+                  courses.slice(0, 3).map((course) => (
+                    <CourseCard
+                      key={course.id}
+                      id={course.id}
+                      title={course.title}
+                      description={course.description}
+                      duration={`${course.duration} minutes`}
+                      enrolledCount={0} // This would need to be fetched from the backend
+                      userRole="superuser"
+                    />
+                  ))
+                ) : (
+                  <div className="col-span-full text-center py-8">
+                    <p className="text-muted-foreground">No courses available</p>
+                  </div>
+                )}
               </div>
               
               <Card className="mt-6 overflow-hidden bg-card/50 backdrop-blur-sm border border-border/50">
@@ -218,17 +272,33 @@ const SuperUserDashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-8">
-                    {mockOrganizations.map((org) => (
-                      <div key={org.id} className="flex items-center p-3 rounded-md hover:bg-muted/20 transition-all duration-200">
-                        <div className="space-y-1">
-                          <p className="text-sm font-medium leading-none">{org.name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {org.users} users · {org.courses} courses
-                          </p>
-                        </div>
-                        <div className="ml-auto font-medium">Last active: {org.lastActivity}</div>
+                    {isLoading ? (
+                      <div className="text-center py-8">
+                        <p className="text-muted-foreground">Loading organizations...</p>
                       </div>
-                    ))}
+                    ) : error ? (
+                      <div className="text-center py-8">
+                        <p className="text-destructive">{error}</p>
+                      </div>
+                    ) : tenants.length > 0 ? (
+                      tenants.slice(0, 3).map((tenant) => (
+                        <div key={tenant.id} className="flex items-center p-3 rounded-md hover:bg-muted/20 transition-all duration-200">
+                          <div className="space-y-1">
+                            <p className="text-sm font-medium leading-none">{tenant.name}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {tenant.users?.length || 0} users · {tenant.courses?.length || 0} courses
+                            </p>
+                          </div>
+                          <div className="ml-auto font-medium">
+                            Domain: {tenant.domain}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-8">
+                        <p className="text-muted-foreground">No organizations available</p>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -244,21 +314,38 @@ const SuperUserDashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {mockOrganizations.map((org) => (
-                      <div key={org.id} className="flex items-center p-4 border border-border/30 rounded-md hover:bg-muted/20 transition-all duration-200">
-                        <div className="space-y-1">
-                          <p className="text-sm font-medium leading-none">{org.name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {org.users} users · {org.courses} courses
-                          </p>
-                        </div>
-                        <div className="ml-auto">
-                          <Button variant="outline" className="hover:bg-complybrand-600 hover:text-white transition-colors">
-                            View Details
-                          </Button>
-                        </div>
+                    {isLoading ? (
+                      <div className="text-center py-8">
+                        <p className="text-muted-foreground">Loading organizations...</p>
                       </div>
-                    ))}
+                    ) : error ? (
+                      <div className="text-center py-8">
+                        <p className="text-destructive">{error}</p>
+                      </div>
+                    ) : tenants.length > 0 ? (
+                      tenants.map((tenant) => (
+                        <div key={tenant.id} className="flex items-center p-4 border border-border/30 rounded-md hover:bg-muted/20 transition-all duration-200">
+                          <div className="space-y-1">
+                            <p className="text-sm font-medium leading-none">{tenant.name}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {tenant.users?.length || 0} users · {tenant.courses?.length || 0} courses
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Admin: {tenant.adminEmail}
+                            </p>
+                          </div>
+                          <div className="ml-auto">
+                            <Button variant="outline" className="hover:bg-complybrand-600 hover:text-white transition-colors">
+                              View Details
+                            </Button>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-8">
+                        <p className="text-muted-foreground">No organizations available</p>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -266,17 +353,31 @@ const SuperUserDashboard = () => {
             
             <TabsContent value="courses" className="animate-fade-in">
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {mockCourses.map((course) => (
-                  <CourseCard
-                    key={course.id}
-                    id={course.id}
-                    title={course.title}
-                    description={course.description}
-                    duration={course.duration}
-                    enrolledCount={course.enrolledCount}
-                    userRole="superuser"
-                  />
-                ))}
+                {isLoading ? (
+                  <div className="col-span-full text-center py-8">
+                    <p className="text-muted-foreground">Loading courses...</p>
+                  </div>
+                ) : error ? (
+                  <div className="col-span-full text-center py-8">
+                    <p className="text-destructive">{error}</p>
+                  </div>
+                ) : courses.length > 0 ? (
+                  courses.map((course) => (
+                    <CourseCard
+                      key={course.id}
+                      id={course.id}
+                      title={course.title}
+                      description={course.description}
+                      duration={`${course.duration} minutes`}
+                      enrolledCount={0} // This would need to be fetched from the backend
+                      userRole="superuser"
+                    />
+                  ))
+                ) : (
+                  <div className="col-span-full text-center py-8">
+                    <p className="text-muted-foreground">No courses available</p>
+                  </div>
+                )}
               </div>
             </TabsContent>
             
@@ -284,7 +385,17 @@ const SuperUserDashboard = () => {
               <Card className="overflow-hidden bg-card/50 backdrop-blur-sm border border-border/50">
                 <CardContent className="pt-6">
                   <UsersList 
-                    users={mockUsers} 
+                    users={tenants.flatMap(tenant => 
+                      (tenant.users || []).map(user => ({
+                        id: user.id,
+                        name: user.name,
+                        email: user.email,
+                        department: "N/A",
+                        coursesCompleted: 0,
+                        totalCourses: tenant.courses?.length || 0,
+                        lastActivity: "N/A"
+                      }))
+                    )} 
                     title="All Platform Users" 
                   />
                 </CardContent>
@@ -297,11 +408,13 @@ const SuperUserDashboard = () => {
       <AddOrganizationForm 
         open={organizationDialogOpen}
         onOpenChange={setOrganizationDialogOpen}
+        onOrganizationCreated={handleOrganizationCreated}
       />
 
       <AddCourseForm
         open={courseDialogOpen}
         onOpenChange={setCourseDialogOpen}
+        onCourseCreated={handleCourseCreated}
       />
       
       <Footer />

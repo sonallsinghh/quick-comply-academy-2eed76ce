@@ -1,5 +1,4 @@
-
-import React from "react";
+import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -29,26 +28,7 @@ const organizationFormSchema = z.object({
   name: z.string().min(2, { message: "Organization name is required" }),
   domain: z.string().min(2, { message: "Domain is required" }),
   email: z.string().email({ message: "Invalid email address" }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
-  presidingOfficerEmail: z.string().email({ message: "Invalid email address" }),
-  poshCommitteeEmail: z.string().email({ message: "Invalid email address" }),
-  hrContactName: z.string().min(2, { message: "HR contact name is required" }),
-  hrContactEmail: z.string().email({ message: "Invalid email address" }),
-  hrContactPhone: z.string().min(10, { message: "Valid phone number required" }),
-  ceoName: z.string().min(2, { message: "CEO name is required" }),
-  ceoEmail: z.string().email({ message: "Invalid email address" }),
-  ceoContact: z.string().min(10, { message: "Valid phone number required" }),
-  ctoName: z.string().min(2, { message: "CTO name is required" }),
-  ctoEmail: z.string().email({ message: "Invalid email address" }),
-  ctoContact: z.string().min(10, { message: "Valid phone number required" }),
-  ccoEmail: z.string().email({ message: "Invalid email address" }),
-  ccoContact: z.string().min(10, { message: "Valid phone number required" }),
-  croName: z.string().min(2, { message: "CRO name is required" }),
-  croEmail: z.string().email({ message: "Invalid email address" }),
-  croContact: z.string().min(10, { message: "Valid phone number required" }),
-  legalOfficerName: z.string().min(2, { message: "Legal officer name is required" }),
-  legalOfficerEmail: z.string().email({ message: "Invalid email address" }),
-  legalOfficerContact: z.string().min(10, { message: "Valid phone number required" }),
+  password: z.string().min(6, { message: "Password must be at least 6 characters" })
 });
 
 type OrganizationFormValues = z.infer<typeof organizationFormSchema>;
@@ -56,46 +36,66 @@ type OrganizationFormValues = z.infer<typeof organizationFormSchema>;
 interface AddOrganizationFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onOrganizationCreated?: () => void;
 }
 
 const AddOrganizationForm: React.FC<AddOrganizationFormProps> = ({
   open,
   onOpenChange,
+  onOrganizationCreated,
 }) => {
+  const [isLoading, setIsLoading] = useState(false);
+
   const form = useForm<OrganizationFormValues>({
     resolver: zodResolver(organizationFormSchema),
     defaultValues: {
       name: "",
       domain: "",
       email: "",
-      password: "",
-      presidingOfficerEmail: "",
-      poshCommitteeEmail: "",
-      hrContactName: "",
-      hrContactEmail: "",
-      hrContactPhone: "",
-      ceoName: "",
-      ceoEmail: "",
-      ceoContact: "",
-      ctoName: "",
-      ctoEmail: "",
-      ctoContact: "",
-      ccoEmail: "",
-      ccoContact: "",
-      croName: "",
-      croEmail: "",
-      croContact: "",
-      legalOfficerName: "",
-      legalOfficerEmail: "",
-      legalOfficerContact: "",
+      password: ""
     },
   });
 
-  function onSubmit(data: OrganizationFormValues) {
-    console.log("Organization form submitted:", data);
-    // Here you would typically save the data to your backend
-    toast.success("Organization added successfully!");
-    onOpenChange(false);
+  async function onSubmit(data: OrganizationFormValues) {
+    setIsLoading(true);
+    try {
+      // Create the tenant
+      const tenantResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/tenants`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: data.name,
+          domain: data.domain,
+          adminEmail: data.email,
+          adminPassword: data.password
+        })
+      });
+
+      if (!tenantResponse.ok) {
+        throw new Error('Failed to create tenant');
+      }
+
+      const tenantData = await tenantResponse.json();
+      
+      // Store tenant ID in localStorage for admin dashboard
+      localStorage.setItem('tenantId', tenantData.id);
+
+      toast.success("Organization added successfully!");
+      form.reset();
+      onOpenChange(false);
+      
+      // Call the callback if provided
+      if (onOrganizationCreated) {
+        onOrganizationCreated();
+      }
+    } catch (error) {
+      console.error('Error adding organization:', error);
+      toast.error("Failed to add organization. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -104,7 +104,7 @@ const AddOrganizationForm: React.FC<AddOrganizationFormProps> = ({
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">Add New Organization</DialogTitle>
           <DialogDescription>
-            Fill in the details to create a new organization on CompliQuick.
+            Fill in the basic details to create a new organization on CompliQuick.
           </DialogDescription>
         </DialogHeader>
 
@@ -183,317 +183,6 @@ const AddOrganizationForm: React.FC<AddOrganizationFormProps> = ({
                   )}
                 />
               </div>
-
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <h3 className="text-lg font-semibold">POSH Committee Details</h3>
-                  <div className="h-px bg-border" />
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="presidingOfficerEmail"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Presiding Officer Email</FormLabel>
-                      <FormControl>
-                        <Input placeholder="officer@acmecorp.com" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="poshCommitteeEmail"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>POSH Committee Email</FormLabel>
-                      <FormControl>
-                        <Input placeholder="posh@acmecorp.com" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </div>
-
-            <div className="grid gap-6 md:grid-cols-2">
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <h3 className="text-lg font-semibold">HR Details</h3>
-                  <div className="h-px bg-border" />
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="hrContactName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center gap-2">
-                        <UserCircle className="h-4 w-4" /> HR Contact Name
-                      </FormLabel>
-                      <FormControl>
-                        <Input placeholder="John Doe" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="hrContactEmail"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center gap-2">
-                        <Mail className="h-4 w-4" /> HR Contact Email
-                      </FormLabel>
-                      <FormControl>
-                        <Input placeholder="hr@acmecorp.com" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="hrContactPhone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center gap-2">
-                        <Phone className="h-4 w-4" /> HR Contact Phone
-                      </FormLabel>
-                      <FormControl>
-                        <Input placeholder="1234567890" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <h3 className="text-lg font-semibold">Executive Details</h3>
-                  <div className="h-px bg-border" />
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="ceoName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>CEO Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Jane Smith" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="ceoEmail"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>CEO Email</FormLabel>
-                      <FormControl>
-                        <Input placeholder="ceo@acmecorp.com" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="ceoContact"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>CEO Contact</FormLabel>
-                      <FormControl>
-                        <Input placeholder="9876543210" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </div>
-
-            <div className="grid gap-6 md:grid-cols-2">
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <h3 className="text-lg font-semibold">Technical & Compliance</h3>
-                  <div className="h-px bg-border" />
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="ctoName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>CTO Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Alex Johnson" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="ctoEmail"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>CTO Email</FormLabel>
-                      <FormControl>
-                        <Input placeholder="cto@acmecorp.com" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="ctoContact"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>CTO Contact</FormLabel>
-                      <FormControl>
-                        <Input placeholder="8765432109" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="ccoEmail"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>CCO Email</FormLabel>
-                      <FormControl>
-                        <Input placeholder="cco@acmecorp.com" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="ccoContact"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>CCO Contact</FormLabel>
-                      <FormControl>
-                        <Input placeholder="7654321098" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <h3 className="text-lg font-semibold">Risk & Legal</h3>
-                  <div className="h-px bg-border" />
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="croName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>CRO Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Sam Wilson" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="croEmail"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>CRO Email</FormLabel>
-                      <FormControl>
-                        <Input placeholder="cro@acmecorp.com" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="croContact"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>CRO Contact</FormLabel>
-                      <FormControl>
-                        <Input placeholder="6543210987" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="legalOfficerName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Legal Officer Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Morgan Lee" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="legalOfficerEmail"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Legal Officer Email</FormLabel>
-                      <FormControl>
-                        <Input placeholder="legal@acmecorp.com" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="legalOfficerContact"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Legal Officer Contact</FormLabel>
-                      <FormControl>
-                        <Input placeholder="5432109876" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
             </div>
 
             <DialogFooter>
@@ -507,8 +196,9 @@ const AddOrganizationForm: React.FC<AddOrganizationFormProps> = ({
               <Button 
                 type="submit" 
                 className="bg-complybrand-700 hover:bg-complybrand-800"
+                disabled={isLoading}
               >
-                Create Organization
+                {isLoading ? "Creating..." : "Create Organization"}
               </Button>
             </DialogFooter>
           </form>

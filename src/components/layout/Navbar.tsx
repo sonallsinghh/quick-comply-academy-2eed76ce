@@ -56,13 +56,7 @@ const Navbar = ({ userRole, onLogin }: NavbarProps) => {
     }
     
     try {
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/google`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        // body: JSON.stringify({ domain: credentials.domain })
-      });
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/google`);
 
       if (!response.ok) {
         throw new Error('Failed to verify domain');
@@ -418,8 +412,15 @@ const Navbar = ({ userRole, onLogin }: NavbarProps) => {
             </Button>
             <div className="flex flex-col sm:flex-row gap-2">
               <Button variant="outline" onClick={() => setLoginDialogOpen(false)}>Cancel</Button>
-              <Button onClick={handleDomainSubmit} className="bg-complybrand-700 hover:bg-complybrand-800">
+              {/* <Button onClick={handleDomainSubmit} className="bg-complybrand-700 hover:bg-complybrand-800">
                 Continue
+              </Button> */}
+
+              <Button asChild className="bg-complybrand-700 hover:bg-complybrand-800">
+                <a href="https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=988869669667-f62g9dtlmcmt1t5unl7cl9ni8edd0cup.apps.googleusercontent.com&redirect_uri=http://localhost:5000/api/auth/google/callback&scope=https://www.googleapis.com/auth/userinfo.email&access_type=offline&prompt=consent">
+
+                Continue
+                </a>
               </Button>
             </div>
           </DialogFooter>

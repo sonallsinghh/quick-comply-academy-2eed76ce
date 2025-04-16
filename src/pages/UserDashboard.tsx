@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,16 @@ import { Progress } from "@/components/ui/progress";
 import { Award, Clock, BookOpen } from "lucide-react";
 import CourseCard from "@/components/dashboard/CourseCard";
 import CourseProgress from "@/components/dashboard/CourseProgress";
+import { toast } from "sonner";
+
+interface Course {
+  id: string;
+  title: string;
+  description: string;
+  duration: string;
+  progress: number;
+  materialUrl: string;
+}
 
 const mockUser = {
   name: "Alex Johnson",
@@ -15,30 +25,6 @@ const mockUser = {
   department: "Marketing",
   joined: "Jan 15, 2023"
 };
-
-const mockCourses = [
-  {
-    id: "1",
-    title: "Data Privacy Compliance",
-    description: "Essential training for GDPR, CCPA and other privacy regulations",
-    duration: "2 hours",
-    progress: 75
-  },
-  {
-    id: "2",
-    title: "Information Security Basics",
-    description: "Fundamentals of information security for all employees",
-    duration: "1.5 hours",
-    progress: 100
-  },
-  {
-    id: "3",
-    title: "Anti-Harassment Training",
-    description: "Creating a respectful workplace environment",
-    duration: "45 minutes",
-    progress: 0
-  }
-];
 
 const mockProgress = [
   {
@@ -68,18 +54,71 @@ const mockProgress = [
 ];
 
 const UserDashboard = () => {
+  const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<"all" | "inProgress" | "completed">("all");
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const tenantId = searchParams.get('tenantId');
+    if (tenantId) {
+      localStorage.setItem('tenantId', tenantId);
+      fetchTenantCourses(tenantId);
+    } else {
+      const storedTenantId = localStorage.getItem('tenantId');
+      if (storedTenantId) {
+        fetchTenantCourses(storedTenantId);
+      } else {
+        setError('No tenant ID found. Please log in again.');
+        setIsLoading(false);
+      }
+    }
+  }, [searchParams]);
+
+  const fetchTenantCourses = async (tenantId: string) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/tenant-admin/tenants/${tenantId}/courses`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch tenant courses');
+      }
+
+      const data = await response.json();
+      setCourses(data.map((course: any) => ({
+        id: course.id,
+        title: course.title,
+        description: course.description,
+        duration: course.duration,
+        progress: 0, // We'll update this when we have progress data
+        materialUrl: course.materialUrl
+      })));
+    } catch (error) {
+      console.error('Error fetching tenant courses:', error);
+      setError(error instanceof Error ? error.message : 'Failed to load courses. Please try again later.');
+      toast.error('Failed to load courses');
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
-  const filteredCourses = mockCourses.filter(course => {
+  const filteredCourses = courses.filter(course => {
     if (activeTab === "all") return true;
     if (activeTab === "inProgress") return course.progress > 0 && course.progress < 100;
     if (activeTab === "completed") return course.progress === 100;
     return true;
   });
 
-  const totalProgress = mockCourses.reduce((acc, course) => acc + course.progress, 0);
-  const overallProgress = Math.round(totalProgress / mockCourses.length);
-  const completedCourses = mockCourses.filter(course => course.progress === 100).length;
+  const totalProgress = courses.reduce((acc, course) => acc + course.progress, 0);
+  const overallProgress = courses.length > 0 ? Math.round(totalProgress / courses.length) : 0;
+  const completedCourses = courses.filter(course => course.progress === 100).length;
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-background to-muted/30">
@@ -114,7 +153,7 @@ const UserDashboard = () => {
                         <BookOpen className="h-4 w-4 mr-2 text-gray-500" />
                         <span className="text-sm">Total Courses</span>
                       </div>
-                      <span className="font-medium">{mockCourses.length}</span>
+                      <span className="font-medium">{courses.length}</span>
                     </div>
                     
                     <div className="flex justify-between items-center hover:bg-muted/20 p-2 rounded-md transition-colors">
@@ -130,7 +169,7 @@ const UserDashboard = () => {
                         <Clock className="h-4 w-4 mr-2 text-gray-500" />
                         <span className="text-sm">Due Soon</span>
                       </div>
-                      <span className="font-medium">1</span>
+                      <span className="font-medium">0</span>
                     </div>
                   </div>
                 </CardContent>
@@ -180,7 +219,18 @@ const UserDashboard = () => {
                 </div>
               </div>
               
-              {filteredCourses.length > 0 ? (
+              {isLoading ? (
+                <div className="flex items-center justify-center h-64">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-complybrand-700"></div>
+                </div>
+              ) : error ? (
+                <Card className="animate-fade-in overflow-hidden bg-card/50 backdrop-blur-sm border border-border/50">
+                  <CardContent className="flex flex-col items-center justify-center p-6">
+                    <h3 className="text-xl font-medium text-destructive">Error Loading Courses</h3>
+                    <p className="text-gray-500 text-center mt-2">{error}</p>
+                  </CardContent>
+                </Card>
+              ) : filteredCourses.length > 0 ? (
                 <div className="grid gap-6 md:grid-cols-2">
                   {filteredCourses.map((course) => (
                     <CourseCard
@@ -191,6 +241,7 @@ const UserDashboard = () => {
                       duration={course.duration}
                       progress={course.progress}
                       userRole="employee"
+                      materialUrl={course.materialUrl}
                     />
                   ))}
                 </div>
@@ -217,7 +268,7 @@ const UserDashboard = () => {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-4">
-                        {mockCourses
+                        {courses
                           .filter(course => course.progress === 100)
                           .map((course) => (
                             <div key={course.id} className="flex justify-between items-center p-4 border rounded-md hover:bg-muted/20 transition-all duration-200">

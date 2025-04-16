@@ -22,6 +22,8 @@ import {
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 
 // Define the form schema with validations
 const courseFormSchema = z.object({
@@ -191,19 +193,22 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="targetAudience"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Target Audience (comma-separated)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., employees, managers, HR" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="space-y-2">
+                <Label htmlFor="targetAudience">Target Audience</Label>
+                <Select
+                  value={form.watch('targetAudience')}
+                  onValueChange={(value) => form.setValue('targetAudience', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select target audience" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Everyone">Everyone</SelectItem>
+                    <SelectItem value="HR">HR</SelectItem>
+                    <SelectItem value="Software Developers">Software Developers</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
               <FormField
                 control={form.control}

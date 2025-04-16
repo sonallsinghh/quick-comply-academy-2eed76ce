@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, LogIn, AtSign, Mail, ArrowLeft } from "lucide-react";
 import { UserRole } from "../../App";
@@ -26,6 +26,9 @@ const Navbar = ({ userRole, onLogin }: NavbarProps) => {
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [domainLoginStep, setDomainLoginStep] = useState<"domain" | "credentials">("domain");
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
   const openLoginDialog = (type: "admin" | "employee") => {
     setLoginType(type);
@@ -56,13 +59,7 @@ const Navbar = ({ userRole, onLogin }: NavbarProps) => {
     }
     
     try {
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/google`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        // body: JSON.stringify({ domain: credentials.domain })
-      });
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/google`);
 
       if (!response.ok) {
         throw new Error('Failed to verify domain');
@@ -121,7 +118,7 @@ const Navbar = ({ userRole, onLogin }: NavbarProps) => {
         console.log('Response Headers:', Object.fromEntries(response.headers.entries()));
         
         const responseData = await response.json();
-        console.log('Response Data:', responseData);
+        console.log('Full Login Response:', responseData);
 
         if (!response.ok) {
           throw new Error(responseData.error || 'Login failed');
@@ -129,6 +126,37 @@ const Navbar = ({ userRole, onLogin }: NavbarProps) => {
         
         // Store the token in localStorage
         localStorage.setItem('token', responseData.token);
+        console.log('Stored token:', responseData.token);
+        
+        // Store the tenant ID from the user's tenant object
+        if (responseData.user?.tenant?.id) {
+          localStorage.setItem('tenantId', responseData.user.tenant.id);
+          console.log('Stored tenant ID:', responseData.user.tenant.id);
+        } else {
+          console.error('No tenant ID found in login response:', responseData);
+          // Try to get tenant ID from domain
+          try {
+            console.log('Attempting to fetch tenant by domain:', cleanDomain);
+            const tenantResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/tenants/domain/${cleanDomain}`);
+            console.log('Tenant lookup response status:', tenantResponse.status);
+            
+            if (tenantResponse.ok) {
+              const tenantData = await tenantResponse.json();
+              console.log('Tenant lookup response:', tenantData);
+              
+              if (tenantData.id) {
+                localStorage.setItem('tenantId', tenantData.id);
+                console.log('Stored tenant ID from domain lookup:', tenantData.id);
+              } else {
+                console.error('No tenant ID found in domain lookup response');
+              }
+            } else {
+              console.error('Failed to fetch tenant by domain');
+            }
+          } catch (error) {
+            console.error('Error fetching tenant by domain:', error);
+          }
+        }
         
         // Call the onLogin callback with the user role
         if (onLogin) {
@@ -160,6 +188,69 @@ const Navbar = ({ userRole, onLogin }: NavbarProps) => {
 
   const handleGoogleLogin = () => {
     window.location.href = `${import.meta.env.VITE_BACKEND_URL}/api/auth/google`;
+  };
+
+  const handleLoginModal = async () => {
+    if (!credentials.email || !credentials.password) {
+      toast.error("Please enter both email and password");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email: credentials.email, password: credentials.password }),
+      });
+
+      const responseData = await response.json();
+
+      if (!response.ok) {
+        throw new Error(responseData.message || "Login failed");
+      }
+
+      // Store the token and tenant ID
+      localStorage.setItem("token", responseData.token);
+      if (responseData.user?.tenantId) {
+        localStorage.setItem("tenantId", responseData.user.tenantId);
+        console.log("Stored tenant ID:", responseData.user.tenantId);
+      } else if (responseData.tenantId) {
+        localStorage.setItem("tenantId", responseData.tenantId);
+        console.log("Stored tenant ID:", responseData.tenantId);
+      } else {
+        // If tenant ID is not in the response, try to get it from the domain
+        try {
+          const domain = window.location.hostname;
+          const tenantResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/tenants/by-domain/${domain}`);
+          if (tenantResponse.ok) {
+            const tenantData = await tenantResponse.json();
+            localStorage.setItem("tenantId", tenantData.id);
+            console.log("Stored tenant ID from domain:", tenantData.id);
+          }
+        } catch (error) {
+          console.error("Error fetching tenant by domain:", error);
+        }
+      }
+
+      // Redirect based on role
+      if (responseData.user.role === "admin") {
+        navigate("/admin-dashboard");
+      } else {
+        navigate("/employee-dashboard");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      toast.error(error instanceof Error ? error.message : "Login failed. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEmployeeLogin = () => {
+    window.location.href = "https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=988869669667-f62g9dtlmcmt1t5unl7cl9ni8edd0cup.apps.googleusercontent.com&redirect_uri=http://localhost:5000/api/auth/google/callback&scope=https://www.googleapis.com/auth/userinfo.email&access_type=offline&prompt=consent";
   };
 
   return (
@@ -200,7 +291,7 @@ const Navbar = ({ userRole, onLogin }: NavbarProps) => {
                   <div className="flex items-center space-x-2">
                     <Button 
                       variant="outline" 
-                      onClick={() => openLoginDialog("employee")}
+                      onClick={handleEmployeeLogin}
                       className="flex items-center space-x-1 hover:scale-105 transition-transform"
                     >
                       <LogIn className="w-4 h-4" />
@@ -276,7 +367,7 @@ const Navbar = ({ userRole, onLogin }: NavbarProps) => {
                     className="w-full justify-start"
                     onClick={() => {
                       setMobileMenuOpen(false);
-                      openLoginDialog("employee");
+                      handleEmployeeLogin();
                     }}
                   >
                     Employee Login
@@ -367,124 +458,6 @@ const Navbar = ({ userRole, onLogin }: NavbarProps) => {
           <DialogFooter>
             <Button variant="outline" onClick={() => setLoginDialogOpen(false)}>Cancel</Button>
             <Button onClick={() => handleLogin()} className="bg-complybrand-700 hover:bg-complybrand-800">Login</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Employee Login Dialog - Domain Step */}
-      <Dialog open={loginDialogOpen && loginType === "employee" && domainLoginStep === "domain"} onOpenChange={(open) => {
-        setLoginDialogOpen(open);
-        if (!open) {
-          setLoginType("employee");
-          setDomainLoginStep("domain");
-        }
-      }}>
-        <DialogContent className="sm:max-w-[425px] animate-scale-in">
-          <DialogHeader>
-            <DialogTitle>Company Domain</DialogTitle>
-            <DialogDescription>
-              Enter your company domain to continue
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="domain">Company Domain</Label>
-              <div className="flex">
-                <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground">
-                  <AtSign className="h-4 w-4" />
-                </span>
-                <Input 
-                  id="domain" 
-                  name="domain"
-                  type="text" 
-                  placeholder="company.com" 
-                  value={credentials.domain}
-                  onChange={handleCredentialChange}
-                  className="rounded-l-none"
-                />
-              </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Example: company.com, organization.org
-              </p>
-            </div>
-          </div>
-          <DialogFooter className="flex flex-col sm:flex-row sm:justify-between gap-2">
-            <Button 
-              variant="outline" 
-              className="w-full sm:w-auto" 
-              onClick={() => handleLogin("sso")}
-            >
-              Login with SSO
-            </Button>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <Button variant="outline" onClick={() => setLoginDialogOpen(false)}>Cancel</Button>
-              <Button onClick={handleDomainSubmit} className="bg-complybrand-700 hover:bg-complybrand-800">
-                Continue
-              </Button>
-            </div>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Employee Login Dialog - Credentials Step */}
-      <Dialog open={loginDialogOpen && loginType === "employee" && domainLoginStep === "credentials"} onOpenChange={(open) => {
-        setLoginDialogOpen(open);
-        if (!open) {
-          setLoginType("employee");
-          setDomainLoginStep("domain");
-        }
-      }}>
-        <DialogContent className="sm:max-w-[425px] animate-scale-in">
-          <DialogHeader>
-            <DialogTitle>Employee Login</DialogTitle>
-            <DialogDescription>
-              Login with your {credentials.domain} credentials
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
-              <Input 
-                id="email" 
-                name="email"
-                type="email" 
-                placeholder={`username@${credentials.domain}`}
-                value={credentials.email}
-                onChange={handleCredentialChange}
-                autoComplete="email"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="password">Password</Label>
-              <Input 
-                id="password" 
-                name="password"
-                type="password" 
-                value={credentials.password}
-                onChange={handleCredentialChange}
-                autoComplete="current-password"
-              />
-            </div>
-          </div>
-          <DialogFooter className="flex flex-col sm:flex-row sm:justify-between gap-2">
-            <Button 
-              variant="outline" 
-              onClick={goBackToDomainStep}
-              className="w-full sm:w-auto flex items-center gap-1"
-            >
-              <ArrowLeft className="h-4 w-4" /> Back
-            </Button>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <Button 
-                variant="outline" 
-                onClick={handleGoogleLogin}
-                className="flex items-center gap-1"
-              >
-                <Mail className="h-4 w-4" />
-                Login with Google
-              </Button>
-              <Button onClick={() => handleLogin()} className="bg-complybrand-700 hover:bg-complybrand-800">Login</Button>
-            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

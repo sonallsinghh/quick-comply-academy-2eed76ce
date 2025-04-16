@@ -142,6 +142,19 @@ const AdminDashboard = () => {
         return;
       }
 
+      const tenantId = localStorage.getItem('tenantId');
+      if (!tenantId) {
+        toast.error('No tenant ID found. Please log in again.');
+        return;
+      }
+
+      // Log the request details
+      console.log('Attempting to assign course:', {
+        courseId,
+        tenantId,
+        url: `${import.meta.env.VITE_BACKEND_URL}/api/courses/assign`
+      });
+
       const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/courses/assign`, {
         method: 'POST',
         headers: {
@@ -149,16 +162,22 @@ const AdminDashboard = () => {
         },
         body: JSON.stringify({ 
           courseId,
-          tenantId: localStorage.getItem('tenantId')
+          tenantId
         }),
       });
 
+      // Log the response status and headers
+      console.log('Response status:', response.status);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
       if (!response.ok) {
-        throw new Error('Failed to assign course');
+        const errorData = await response.json().catch(() => null);
+        console.error('Error response data:', errorData);
+        throw new Error(errorData?.message || `Failed to assign course. Status: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('Course assigned:', data);
+      console.log('Course assigned successfully:', data);
       
       // Close the dialog
       setIsAddCourseDialogOpen(false);
@@ -179,8 +198,8 @@ const AdminDashboard = () => {
       
       toast.success('Course assigned successfully');
     } catch (error) {
-      console.error('Error assigning course:', error);
-      toast.error('Failed to assign course');
+      console.error('Detailed error assigning course:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to assign course');
     }
   };
 

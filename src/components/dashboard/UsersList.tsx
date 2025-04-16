@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Loader2 } from "lucide-react";
 
 interface User {
   id: string;
@@ -8,25 +9,33 @@ interface User {
   email: string;
   role: string;
   enrollments: {
-    course: {
-      id: string;
-      title: string;
-    };
+    courseId: string;
     completed: boolean;
   }[];
 }
 
 interface UsersListProps {
-  users: User[];
+  users?: User[];
   title?: string;
 }
 
-const UsersList = ({ users, title = "Users" }: UsersListProps) => {
+export default function UsersList({ users = [], title = "Users" }: UsersListProps) {
+  if (!users || users.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>{title}</CardTitle>
+          <CardDescription>No users found</CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>{title}</CardTitle>
-        <CardDescription>View and manage organization users</CardDescription>
+        <CardDescription>View and manage user details</CardDescription>
       </CardHeader>
       <CardContent>
         <Table>
@@ -51,24 +60,18 @@ const UsersList = ({ users, title = "Users" }: UsersListProps) => {
                 </TableCell>
                 <TableCell>
                   <div className="flex flex-wrap gap-1">
-                    {user.enrollments.length > 0 ? (
-                      user.enrollments.map((enrollment) => (
-                        <Badge key={enrollment.course.id} variant="outline">
-                          {enrollment.course.title}
-                        </Badge>
-                      ))
-                    ) : (
-                      <span className="text-sm text-muted-foreground">No courses</span>
-                    )}
+                    {user.enrollments?.map((enrollment) => (
+                      <Badge key={enrollment.courseId} variant="outline">
+                        Course {enrollment.courseId}
+                      </Badge>
+                    ))}
                   </div>
                 </TableCell>
                 <TableCell>
-                  {user.enrollments.length > 0 ? (
-                    user.enrollments.every(e => e.completed) ? (
-                      <Badge variant="success">Completed</Badge>
-                    ) : (
-                      <Badge variant="warning">In Progress</Badge>
-                    )
+                  {user.enrollments?.some(e => !e.completed) ? (
+                    <Badge variant="warning">In Progress</Badge>
+                  ) : user.enrollments?.length > 0 ? (
+                    <Badge variant="success">Completed</Badge>
                   ) : (
                     <Badge variant="secondary">Not Started</Badge>
                   )}
@@ -80,6 +83,4 @@ const UsersList = ({ users, title = "Users" }: UsersListProps) => {
       </CardContent>
     </Card>
   );
-};
-
-export default UsersList;
+}

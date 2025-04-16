@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
+import PPTViewer from '@/components/dashboard/PPTViewer';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
@@ -35,9 +36,10 @@ const AdminDashboard = () => {
   const [error, setError] = useState<string | null>(null);
   const [users, setUsers] = useState([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
-  const [selectedCourse, setSelectedCourse] = useState<any>(null);
-  const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
-  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [showPPTViewer, setShowPPTViewer] = useState(false);
+  const [explanations, setExplanations] = useState([]);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -132,90 +134,96 @@ const AdminDashboard = () => {
 
   const handleAddCourse = async () => {
     try {
+      // Get the first selected course (since we can only assign one at a time)
+      const courseId = selectedCourses[0];
+      
+      if (!courseId) {
+        toast.error('Please select a course to add');
+        return;
+      }
+
       const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/courses/assign`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ tenantId, courseIds: selectedCourses }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to assign courses');
-      }
-
-      const data = await response.json();
-      console.log('Courses assigned:', data);
-      setIsAddCourseDialogOpen(false);
-      // Refresh the tenant courses after assignment
-      const fetchResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/tenants/${tenantId}/courses`);
-      if (fetchResponse.ok) {
-        const updatedCourses = await fetchResponse.json();
-        setCourses(updatedCourses);
-        // Also refresh available courses to update the list
-        const availableResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/courses`);
-        if (availableResponse.ok) {
-          const allCourses = await availableResponse.json();
-          // Filter out courses that are already assigned to the tenant
-          const unassignedCourses = allCourses.filter((course: any) => 
-            !updatedCourses.some((assignedCourse: any) => assignedCourse.id === course.id)
-          );
-          setAvailableCourses(unassignedCourses);
-        }
-      }
-    } catch (error) {
-      console.error('Error assigning courses:', error);
-    }
-  };
-
-  const handleCourseSelect = async (course: any) => {
-    setSelectedCourse(course);
-    setIsGeneratingVideo(true);
-    setVideoUrl(null);
-
-    try {
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/courses/${course.id}/generate-video`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          tenantId,
-          courseId: course.id
+        body: JSON.stringify({ 
+          courseId,
+          tenantId: localStorage.getItem('tenantId')
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to generate video');
+        throw new Error('Failed to assign course');
       }
 
       const data = await response.json();
-      console.log('Video generation response:', data);
+      console.log('Course assigned:', data);
+      
+      // Close the dialog
+      setIsAddCourseDialogOpen(false);
+      
+      // Refresh the courses list
+      const coursesResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/tenant-admin/tenants/${tenantId}/courses`);
+      if (coursesResponse.ok) {
+        const updatedCourses = await coursesResponse.json();
+        setCourses(updatedCourses);
+      }
 
-      // Poll for video generation status
-      const pollVideoStatus = async () => {
-        const statusResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/courses/${course.id}/video-status`);
-        const statusData = await statusResponse.json();
-
-        if (statusData.status === 'completed') {
-          setVideoUrl(statusData.videoUrl);
-          setIsGeneratingVideo(false);
-          toast.success('Video generated successfully!');
-        } else if (statusData.status === 'failed') {
-          setIsGeneratingVideo(false);
-          toast.error('Failed to generate video. Please try again.');
-        } else {
-          // Continue polling
-          setTimeout(pollVideoStatus, 5000);
-        }
-      };
-
-      pollVideoStatus();
+      // Refresh available courses
+      const availableResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/courses`);
+      if (availableResponse.ok) {
+        const allCourses = await availableResponse.json();
+        setAvailableCourses(allCourses);
+      }
+      
+      toast.success('Course assigned successfully');
     } catch (error) {
-      console.error('Error generating video:', error);
-      setIsGeneratingVideo(false);
-      toast.error('Failed to generate video. Please try again.');
+      console.error('Error assigning course:', error);
+      toast.error('Failed to assign course');
     }
+  };
+
+  const handleCourseSelect = async (course) => {
+    try {
+      setIsProcessing(true);
+      toast.info('Processing slides...');
+
+      // Process slides and get explanations
+      const response = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/api/courses/${course.id}/process-slides`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            tenantId: localStorage.getItem('tenantId')
+          })
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to process slides');
+      }
+
+      const data = await response.json();
+      setExplanations(data.explanations);
+      setSelectedCourse(course);
+      setShowPPTViewer(true);
+      toast.success('Slides processed successfully');
+    } catch (error) {
+      console.error('Error processing slides:', error);
+      toast.error('Failed to process slides');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleClosePPTViewer = () => {
+    setShowPPTViewer(false);
+    setSelectedCourse(null);
+    setExplanations([]);
   };
 
   const completedCount = users.filter(
@@ -341,10 +349,10 @@ const AdminDashboard = () => {
                       No users found in your organization.
                     </div>
                   ) : (
-                    <UsersList 
+                  <UsersList 
                       users={users.slice(0, 3)} 
-                      title="Recent User Activity" 
-                    />
+                    title="Recent User Activity" 
+                  />
                   )}
                   <div className="mt-4 flex justify-end">
                     <Button 
@@ -399,7 +407,7 @@ const AdminDashboard = () => {
                     <div className="grid gap-4 md:grid-cols-3">
                       {courses.map((course) => (
                         <Card 
-                          key={course.id} 
+                        key={course.id}
                           className="hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 overflow-hidden bg-card/50 backdrop-blur-sm border border-border/50 cursor-pointer"
                           onClick={() => handleCourseSelect(course)}
                         >
@@ -414,47 +422,20 @@ const AdminDashboard = () => {
                             <p>Target Audience: {course.targetAudience}</p>
                           </CardContent>
                         </Card>
-                      ))}
-                    </div>
+                    ))}
+                  </div>
                   )}
                 </CardContent>
               </Card>
 
-              {/* Video Display Section */}
-              {selectedCourse && (
-                <div className="mt-8">
-                  <Card className="overflow-hidden bg-card/50 backdrop-blur-sm border border-border/50">
-                    <CardHeader>
-                      <CardTitle>{selectedCourse.title} - Video Presentation</CardTitle>
-                      <CardDescription>
-                        {isGeneratingVideo ? 'Generating video...' : 'Watch the course presentation'}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      {isGeneratingVideo ? (
-                        <div className="flex flex-col items-center justify-center py-8">
-                          <Loader2 className="h-8 w-8 animate-spin text-complybrand-600" />
-                          <p className="mt-4 text-sm text-muted-foreground">
-                            Generating video presentation...
-                          </p>
-                        </div>
-                      ) : videoUrl ? (
-                        <div className="aspect-video w-full">
-                          <video 
-                            controls 
-                            className="w-full h-full rounded-lg"
-                            src={videoUrl}
-                          >
-                            Your browser does not support the video tag.
-                          </video>
-                        </div>
-                      ) : (
-                        <div className="text-center py-8 text-muted-foreground">
-                          Click on a course to generate its video presentation
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
+              {/* PPT Viewer Modal */}
+              {showPPTViewer && selectedCourse && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                  <PPTViewer 
+                    materialUrl={selectedCourse.materialUrl}
+                    explanations={explanations}
+                    onClose={handleClosePPTViewer}
+                  />
                 </div>
               )}
             </TabsContent>
@@ -518,63 +499,6 @@ const AdminDashboard = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Video Generation Section */}
-      {selectedCourse && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-card w-full max-w-4xl mx-4 rounded-lg shadow-xl">
-            <div className="p-6">
-              <h2 className="text-2xl font-bold mb-4">{selectedCourse.title} - Video Generation</h2>
-              {isGeneratingVideo ? (
-                <div className="flex flex-col items-center justify-center py-8">
-                  <Loader2 className="h-12 w-12 animate-spin text-complybrand-600 mb-4" />
-                  <p className="text-lg text-muted-foreground">
-                    Generating video presentation...
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    This may take a few minutes. Please don't close this window.
-                  </p>
-                </div>
-              ) : videoUrl ? (
-                <div className="space-y-4">
-                  <div className="aspect-video w-full bg-black rounded-lg overflow-hidden">
-                    <video 
-                      controls 
-                      className="w-full h-full"
-                      src={videoUrl}
-                    >
-                      Your browser does not support the video tag.
-                    </video>
-                  </div>
-                  <div className="flex justify-end">
-                    <Button 
-                      onClick={() => {
-                        setSelectedCourse(null);
-                        setVideoUrl(null);
-                      }}
-                      variant="outline"
-                    >
-                      Close
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-muted-foreground">
-                    Click the button below to start generating the video presentation.
-                  </p>
-                  <Button 
-                    onClick={() => handleCourseSelect(selectedCourse)}
-                    className="mt-4 bg-complybrand-600 hover:bg-complybrand-700"
-                  >
-                    Generate Video
-                  </Button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
       <Footer />
     </div>

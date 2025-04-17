@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, LogIn, AtSign, Mail, ArrowLeft } from "lucide-react";
 import { UserRole } from "../../App";
@@ -26,6 +26,9 @@ const Navbar = ({ userRole, onLogin }: NavbarProps) => {
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [domainLoginStep, setDomainLoginStep] = useState<"domain" | "credentials">("domain");
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
   const openLoginDialog = (type: "admin" | "employee") => {
     setLoginType(type);
@@ -115,7 +118,7 @@ const Navbar = ({ userRole, onLogin }: NavbarProps) => {
         console.log('Response Headers:', Object.fromEntries(response.headers.entries()));
         
         const responseData = await response.json();
-        console.log('Response Data:', responseData);
+        console.log('Full Login Response:', responseData);
 
         if (!response.ok) {
           throw new Error(responseData.error || 'Login failed');
@@ -123,6 +126,37 @@ const Navbar = ({ userRole, onLogin }: NavbarProps) => {
         
         // Store the token in localStorage
         localStorage.setItem('token', responseData.token);
+        console.log('Stored token:', responseData.token);
+        
+        // Store the tenant ID from the user's tenant object
+        if (responseData.user?.tenant?.id) {
+          localStorage.setItem('tenantId', responseData.user.tenant.id);
+          console.log('Stored tenant ID:', responseData.user.tenant.id);
+        } else {
+          console.error('No tenant ID found in login response:', responseData);
+          // Try to get tenant ID from domain
+          try {
+            console.log('Attempting to fetch tenant by domain:', cleanDomain);
+            const tenantResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/tenants/domain/${cleanDomain}`);
+            console.log('Tenant lookup response status:', tenantResponse.status);
+            
+            if (tenantResponse.ok) {
+              const tenantData = await tenantResponse.json();
+              console.log('Tenant lookup response:', tenantData);
+              
+              if (tenantData.id) {
+                localStorage.setItem('tenantId', tenantData.id);
+                console.log('Stored tenant ID from domain lookup:', tenantData.id);
+              } else {
+                console.error('No tenant ID found in domain lookup response');
+              }
+            } else {
+              console.error('Failed to fetch tenant by domain');
+            }
+          } catch (error) {
+            console.error('Error fetching tenant by domain:', error);
+          }
+        }
         
         // Call the onLogin callback with the user role
         if (onLogin) {
@@ -154,6 +188,69 @@ const Navbar = ({ userRole, onLogin }: NavbarProps) => {
 
   const handleGoogleLogin = () => {
     window.location.href = `${import.meta.env.VITE_BACKEND_URL}/api/auth/google`;
+  };
+
+  const handleLoginModal = async () => {
+    if (!credentials.email || !credentials.password) {
+      toast.error("Please enter both email and password");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email: credentials.email, password: credentials.password }),
+      });
+
+      const responseData = await response.json();
+
+      if (!response.ok) {
+        throw new Error(responseData.message || "Login failed");
+      }
+
+      // Store the token and tenant ID
+      localStorage.setItem("token", responseData.token);
+      if (responseData.user?.tenantId) {
+        localStorage.setItem("tenantId", responseData.user.tenantId);
+        console.log("Stored tenant ID:", responseData.user.tenantId);
+      } else if (responseData.tenantId) {
+        localStorage.setItem("tenantId", responseData.tenantId);
+        console.log("Stored tenant ID:", responseData.tenantId);
+      } else {
+        // If tenant ID is not in the response, try to get it from the domain
+        try {
+          const domain = window.location.hostname;
+          const tenantResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/tenants/by-domain/${domain}`);
+          if (tenantResponse.ok) {
+            const tenantData = await tenantResponse.json();
+            localStorage.setItem("tenantId", tenantData.id);
+            console.log("Stored tenant ID from domain:", tenantData.id);
+          }
+        } catch (error) {
+          console.error("Error fetching tenant by domain:", error);
+        }
+      }
+
+      // Redirect based on role
+      if (responseData.user.role === "admin") {
+        navigate("/admin-dashboard");
+      } else {
+        navigate("/employee-dashboard");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      toast.error(error instanceof Error ? error.message : "Login failed. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEmployeeLogin = () => {
+    window.location.href = "https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=988869669667-f62g9dtlmcmt1t5unl7cl9ni8edd0cup.apps.googleusercontent.com&redirect_uri=http://localhost:5000/api/auth/google/callback&scope=https://www.googleapis.com/auth/userinfo.email&access_type=offline&prompt=consent";
   };
 
   return (
@@ -194,7 +291,7 @@ const Navbar = ({ userRole, onLogin }: NavbarProps) => {
                   <div className="flex items-center space-x-2">
                     <Button 
                       variant="outline" 
-                      onClick={() => openLoginDialog("employee")}
+                      onClick={handleEmployeeLogin}
                       className="flex items-center space-x-1 hover:scale-105 transition-transform"
                     >
                       <LogIn className="w-4 h-4" />
@@ -270,7 +367,7 @@ const Navbar = ({ userRole, onLogin }: NavbarProps) => {
                     className="w-full justify-start"
                     onClick={() => {
                       setMobileMenuOpen(false);
-                      openLoginDialog("employee");
+                      handleEmployeeLogin();
                     }}
                   >
                     Employee Login
@@ -412,15 +509,8 @@ const Navbar = ({ userRole, onLogin }: NavbarProps) => {
             </Button>
             <div className="flex flex-col sm:flex-row gap-2">
               <Button variant="outline" onClick={() => setLoginDialogOpen(false)}>Cancel</Button>
-              {/* <Button onClick={handleDomainSubmit} className="bg-complybrand-700 hover:bg-complybrand-800">
+              <Button onClick={handleDomainSubmit} className="bg-complybrand-700 hover:bg-complybrand-800">
                 Continue
-              </Button> */}
-
-              <Button asChild className="bg-complybrand-700 hover:bg-complybrand-800">
-                <a href="https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=988869669667-f62g9dtlmcmt1t5unl7cl9ni8edd0cup.apps.googleusercontent.com&redirect_uri=http://localhost:5000/api/auth/google/callback&scope=https://www.googleapis.com/auth/userinfo.email&access_type=offline&prompt=consent">
-
-                Continue
-                </a>
               </Button>
             </div>
           </DialogFooter>

@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -17,6 +16,8 @@ import { useState } from "react";
 import { ThemeProvider } from "next-themes";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { motion } from "framer-motion";
+import Quiz from '@/components/course/Quiz';
+import QuizResults from './pages/QuizResults';
 
 // Mock authentication for demonstration purposes
 // In a real app, we'd use proper authentication like Auth0, Clerk, or Supabase
@@ -51,11 +52,12 @@ const App = () => {
                 <Route path="/superuser/dashboard" element={<SuperUserDashboard />} />
                 <Route path="/admin/dashboard" element={<AdminDashboard />} />
                 <Route path="/dashboard" element={<UserDashboard />} />
-                <Route path="/course/:courseId" element={<CourseDetails />} />
-                <Route path="/course/:courseId/play" element={<CoursePlayer />} />
-                <Route path="/course/:courseId/quiz" element={<QuizPage />} />
-                <Route path="/course/:courseId/result" element={<ResultPage />} />
+                <Route path="/dashboard/course/:courseId" element={<CourseDetails />} />
+                <Route path="/dashboard/course/:courseId/play" element={<CoursePlayer />} />
+                <Route path="/dashboard/course/:courseId/quiz" element={<Quiz />} />
+                <Route path="/dashboard/course/:courseId/result" element={<ResultPage />} />
                 <Route path="/admin/reports/user/:userId" element={<UserDashboard />} />
+                <Route path="/quiz-results" element={<QuizResults />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </div>

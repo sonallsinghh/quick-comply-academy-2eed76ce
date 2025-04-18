@@ -1,20 +1,19 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import SlideControls from "./SlideControls";
 import SlideNavigation from "./SlideNavigation";
 import SlideContent from "./SlideContent";
-import ChatHelp from "./ChatHelp";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { useNavigate, useSearchParams, useParams } from 'react-router-dom';
 
 interface Slide {
   id: string;
   title: string;
   content: string;
   completed: boolean;
-  explanation?: string;
 }
 
 interface SlidePlayerProps {
@@ -22,7 +21,8 @@ interface SlidePlayerProps {
   currentSlideIndex: number;
   onSlideChange: (index: number) => void;
   onComplete: () => void;
-  isLoadingExplanations?: boolean;
+  explanations: Record<string, string>;
+  isLoadingExplanations: boolean;
 }
 
 const SlidePlayer = ({
@@ -30,7 +30,8 @@ const SlidePlayer = ({
   currentSlideIndex,
   onSlideChange,
   onComplete,
-  isLoadingExplanations = false
+  explanations,
+  isLoadingExplanations,
 }: SlidePlayerProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(80);
@@ -41,6 +42,9 @@ const SlidePlayer = ({
   const [canAdvance, setCanAdvance] = useState(false);
   const progressTimerRef = useRef<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const navigate = useNavigate();
+  const { courseId } = useParams();
+  const [searchParams] = useSearchParams();
   
   const currentSlide = slides[currentSlideIndex];
   const isLastSlide = currentSlideIndex === slides.length - 1;
@@ -155,6 +159,102 @@ const SlidePlayer = ({
     setIsPlaying(!isPlaying);
   };
   
+  const handleComplete = async () => {
+    try {
+      const tenantId = localStorage.getItem('tenantId');
+
+      console.log('Parameters check:', {
+        courseId,
+        tenantId,
+        searchParams: Object.fromEntries(searchParams.entries())
+      });
+
+      if (!courseId || !tenantId) {
+        throw new Error(`Missing required parameters. CourseId: ${courseId}, TenantId: ${tenantId}`);
+      }
+
+      // Get the material URL from localStorage
+      const storedMaterialUrl = localStorage.getItem(`course_material_${courseId}`);
+      let s3Url;
+
+      if (!storedMaterialUrl) {
+        console.log('Material URL not found in localStorage, fetching from API...');
+        // If not in localStorage, fetch it
+        const materialResponse = await fetch(
+          `${import.meta.env.VITE_BACKEND_URL}/api/courses/${courseId}/chatbot-material?tenantId=${tenantId}`
+        );
+
+        if (!materialResponse.ok) {
+          const errorText = await materialResponse.text();
+          console.error('Material URL fetch failed:', {
+            status: materialResponse.status,
+            statusText: materialResponse.statusText,
+            errorText
+          });
+          throw new Error(`Failed to fetch course material URL: ${materialResponse.status} ${materialResponse.statusText}`);
+        }
+
+        const materialData = await materialResponse.json();
+        s3Url = materialData.materialUrl;
+        
+        if (!s3Url) {
+          throw new Error('Material URL is empty in the response');
+        }
+
+        // Store it for future use
+        localStorage.setItem(`course_material_${courseId}`, s3Url);
+        console.log('Stored material URL in localStorage:', s3Url);
+      } else {
+        console.log('Using material URL from localStorage:', storedMaterialUrl);
+        s3Url = storedMaterialUrl;
+      }
+
+      // Generate MCQs using the AI service
+      console.log('Sending request to AI service with URL:', s3Url);
+      const mcqResponse = await fetch(`${import.meta.env.VITE_AI_SERVICE_URL}/generate_mcq`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          s3_url: s3Url,
+          course_id: courseId,
+          tenant_id: tenantId
+        })
+      });
+
+      if (!mcqResponse.ok) {
+        const errorText = await mcqResponse.text();
+        console.error('MCQ generation failed:', {
+          status: mcqResponse.status,
+          statusText: mcqResponse.statusText,
+          errorText,
+          url: `${import.meta.env.VITE_AI_SERVICE_URL}/generate_mcq`
+        });
+        throw new Error('Failed to generate MCQs');
+      }
+
+      const mcqData = await mcqResponse.json();
+      console.log('Generated MCQs:', mcqData);
+      
+      if (!mcqData.mcqs || !Array.isArray(mcqData.mcqs)) {
+        throw new Error('Invalid MCQ data received');
+      }
+
+      // Store MCQ data in localStorage for the quiz page
+      localStorage.setItem('currentQuiz', JSON.stringify(mcqData.mcqs));
+
+      // Call the original onComplete handler
+      await onComplete();
+
+      // Navigate to the quiz page
+      window.location.href = `/dashboard/course/${courseId}/quiz?tenantId=${tenantId}`;
+    } catch (error) {
+      console.error('Error preparing quiz:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to prepare quiz. Please try again.');
+    }
+  };
+  
   const handleNext = () => {
     if (!canAdvance && progress < 80) {
       toast.info("Please finish this slide before moving to the next one");
@@ -165,7 +265,7 @@ const SlidePlayer = ({
       onSlideChange(currentSlideIndex + 1);
     } else {
       // Last slide - mark course as complete
-      onComplete();
+      handleComplete();
     }
   };
   
@@ -245,7 +345,7 @@ const SlidePlayer = ({
                   <div className="animate-pulse h-32 bg-gray-200 dark:bg-gray-700 rounded-md" />
                 ) : (
                   <div className="prose prose-sm dark:prose-invert max-w-none">
-                    <p className="text-gray-700 dark:text-gray-300">{currentSlide?.explanation || currentSlide?.content}</p>
+                    <p className="text-gray-700 dark:text-gray-300">{explanations[currentSlide.id] || currentSlide.content}</p>
                   </div>
                 )}
               </Card>
@@ -279,20 +379,12 @@ const SlidePlayer = ({
             handleVolumeChange={handleVolumeChange}
             playbackRate={playbackRate}
             changePlaybackRate={changePlaybackRate}
-            onComplete={onComplete}
+            onComplete={handleComplete}
             showSubtitles={showSubtitles}
             toggleSubtitles={toggleSubtitles}
             canAdvance={canAdvance}
           />
         </Card>
-        
-        {/* Chat Help section */}
-        <div className="mt-6">
-          <ChatHelp
-            slideTitle={currentSlide.title}
-            slideContent={currentSlide.content}
-          />
-        </div>
       </div>
     </div>
   );

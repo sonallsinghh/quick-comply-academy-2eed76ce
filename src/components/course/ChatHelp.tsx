@@ -1,158 +1,430 @@
-
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { MessageCircle, SendHorizontal } from "lucide-react";
+import { useState, useEffect, useRef } from 'react';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Loader2, Send, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
+import { toast } from 'sonner';
+import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
+import { useSpeechSynthesis } from 'react-speech-kit';
 
 interface ChatMessage {
-  id: string;
-  text: string;
-  isUser: boolean;
-  timestamp: Date;
+  role: 'user' | 'assistant';
+  content: string;
 }
 
 interface ChatHelpProps {
   slideTitle: string;
   slideContent: string;
+  tenantId: string;
 }
 
-const ChatHelp: React.FC<ChatHelpProps> = ({ slideTitle, slideContent }) => {
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
-    {
-      id: "welcome",
-      text: "Hello! I'm your AI assistant. Ask me any questions about this slide.",
-      isUser: false,
-      timestamp: new Date(),
-    },
-  ]);
-  const [inputText, setInputText] = useState("");
-  const [isExpanded, setIsExpanded] = useState(false);
+interface TenantDetails {
+  details: {
+    presidingOfficerEmail: string;
+    poshCommitteeEmail: string;
+    hrContactName: string;
+    hrContactEmail: string;
+    hrContactPhone: string;
+  }
+}
 
-  const handleSendMessage = () => {
-    if (!inputText.trim()) return;
+interface CourseMaterial {
+  materialUrl: string;
+}
 
-    // Add user message to chat
-    const userMessage: ChatMessage = {
-      id: `user-${Date.now()}`,
-      text: inputText,
-      isUser: true,
-      timestamp: new Date(),
+const ChatHelp = ({ slideTitle, slideContent, tenantId }: ChatHelpProps) => {
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [tenantDetails, setTenantDetails] = useState<TenantDetails | null>(null);
+  const [courseMaterial, setCourseMaterial] = useState<CourseMaterial | null>(null);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [volume, setVolume] = useState(1);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const speechSynthesisRef = useRef<SpeechSynthesis | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const token = localStorage.getItem('token');
+
+  // Speech recognition setup
+  const {
+    transcript,
+    listening,
+    resetTranscript,
+    browserSupportsSpeechRecognition
+  } = useSpeechRecognition();
+
+  // Initialize audio systems
+  useEffect(() => {
+    const initAudio = () => {
+      try {
+        // Initialize Web Audio API
+        if (!audioContextRef.current) {
+          audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+          console.log('Audio context initialized successfully');
+        }
+
+        // Initialize Speech Synthesis
+        if (!speechSynthesisRef.current) {
+          speechSynthesisRef.current = window.speechSynthesis;
+          console.log('Speech synthesis initialized successfully');
+        }
+      } catch (error) {
+        console.error('Failed to initialize audio systems:', error);
+        toast.error('Audio system initialization failed');
+      }
     };
-    
-    setChatMessages((prev) => [...prev, userMessage]);
-    setInputText("");
 
-    // Simulate AI response (in a real app, this would call an API)
-    setTimeout(() => {
-      const aiResponse: ChatMessage = {
-        id: `ai-${Date.now()}`,
-        text: `I can help you understand "${slideTitle}". ${generateAIResponse(inputText, slideContent)}`,
-        isUser: false,
-        timestamp: new Date(),
-      };
+    // Initialize on first user interaction
+    const handleFirstInteraction = () => {
+      initAudio();
+      document.removeEventListener('click', handleFirstInteraction);
+    };
+
+    document.addEventListener('click', handleFirstInteraction);
+    return () => {
+      document.removeEventListener('click', handleFirstInteraction);
+    };
+  }, []);
+
+  const playTextAudio = async (text: string) => {
+    if (!audioContextRef.current) {
+      console.error('Audio context not initialized');
+      toast.error('Audio system not ready. Please try again.');
+      return;
+    }
+
+    try {
+      setIsSpeaking(true);
+
+      // First try using Web Speech API
+      if (speechSynthesisRef.current) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        
+        // Configure voice
+        const voices = speechSynthesisRef.current.getVoices();
+        const voice = voices.find(v => v.lang.includes('en')) || voices[0];
+        if (voice) utterance.voice = voice;
+        
+        // Configure speech
+        utterance.volume = volume;
+        utterance.rate = 1;
+        utterance.pitch = 1;
+
+        // Add event listeners
+        utterance.onstart = () => {
+          console.log('Speech started');
+          setIsSpeaking(true);
+        };
+
+        utterance.onend = () => {
+          console.log('Speech ended');
+          setIsSpeaking(false);
+        };
+
+        utterance.onerror = (event) => {
+          console.error('Speech error:', event);
+          toast.error('Error during speech playback');
+          setIsSpeaking(false);
+        };
+
+        // Cancel any ongoing speech
+        speechSynthesisRef.current.cancel();
+        speechSynthesisRef.current.speak(utterance);
+        return;
+      }
+
+      // Fallback: Play a simple tone
+      const oscillator = audioContextRef.current.createOscillator();
+      const gainNode = audioContextRef.current.createGain();
       
-      setChatMessages((prev) => [...prev, aiResponse]);
-    }, 1000);
-  };
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContextRef.current.destination);
+      
+      oscillator.frequency.setValueAtTime(440, audioContextRef.current.currentTime);
+      gainNode.gain.setValueAtTime(0.1 * volume, audioContextRef.current.currentTime);
+      
+      oscillator.start();
+      oscillator.stop(audioContextRef.current.currentTime + 0.2);
 
-  const generateAIResponse = (question: string, content: string): string => {
-    // This is just a mock response. In a production app, you'd call an AI API
-    const responses = [
-      `Based on the slide content, I think this might help: "${content.substring(0, 50)}..."`,
-      "That's a great question! The slide explains this concept in detail.",
-      "I'd recommend focusing on the key points mentioned in this slide.",
-      "This slide covers that topic. The main idea is about learning progressively.",
-    ];
-    
-    return responses[Math.floor(Math.random() * responses.length)];
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
+      // Show text in toast
+      toast.info('Speaking: ' + text.substring(0, 50) + '...');
+      
+      // Simulate speech duration
+      await new Promise(resolve => setTimeout(resolve, text.length * 50));
+      
+      setIsSpeaking(false);
+    } catch (error) {
+      console.error('Error playing audio:', error);
+      toast.error('Failed to play audio');
+      setIsSpeaking(false);
     }
   };
 
-  const toggleExpand = () => {
-    setIsExpanded(!isExpanded);
+  const handleSpeakResponse = async (text: string) => {
+    console.log('Attempting to speak:', { text, isSpeaking });
+    
+    if (isSpeaking) {
+      // Stop current speech
+      if (speechSynthesisRef.current) {
+        speechSynthesisRef.current.cancel();
+      }
+      setIsSpeaking(false);
+      return;
+    }
+
+    // Clean the text (remove markdown and extra spaces)
+    const cleanText = text
+      .replace(/\*\*/g, '') // Remove bold markers
+      .replace(/\n/g, ' ') // Replace newlines with spaces
+      .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+      .trim();
+
+    await playTextAudio(cleanText);
   };
 
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  // Fetch tenant details and course material when component mounts
+  useEffect(() => {
+    const fetchRequiredData = async () => {
+      try {
+        // Fetch tenant details
+        const tenantResponse = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/tenants/${tenantId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          }
+        });
+        
+        if (!tenantResponse.ok) {
+          throw new Error('Failed to fetch tenant details');
+        }
+        
+        const tenantData = await tenantResponse.json();
+        setTenantDetails(tenantData);
+
+        // Get courseId from URL
+        const courseId = window.location.pathname.split('/course/')[1]?.split('/')[0];
+        if (!courseId) {
+          throw new Error('Course ID not found in URL');
+        }
+
+        // Check if we already have the material URL in localStorage
+        const storedMaterialUrl = localStorage.getItem(`course_material_${courseId}`);
+        
+        if (!storedMaterialUrl) {
+          // Fetch course material URL if not in localStorage
+          const materialResponse = await fetch(
+            `${import.meta.env.VITE_BACKEND_URL}/api/courses/${courseId}/chatbot-material?tenantId=${tenantId}`,
+            {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+              }
+            }
+          );
+
+          if (!materialResponse.ok) {
+            throw new Error('Failed to fetch course material');
+          }
+
+          const materialData = await materialResponse.json();
+          // Store the material URL in localStorage
+          localStorage.setItem(`course_material_${courseId}`, materialData.materialUrl);
+          setCourseMaterial({ materialUrl: materialData.materialUrl });
+        } else {
+          // Use the stored material URL
+          setCourseMaterial({ materialUrl: storedMaterialUrl });
+        }
+      } catch (error) {
+        console.error('Error fetching required data:', error);
+        toast.error('Failed to load chat data');
+      }
+    };
+
+    if (tenantId && token) {
+      fetchRequiredData();
+    }
+  }, [tenantId, token]);
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const startListening = () => {
+    resetTranscript();
+    SpeechRecognition.startListening({ continuous: true });
+  };
+
+  const stopListening = () => {
+    SpeechRecognition.stopListening();
+    if (transcript) {
+      setInput(transcript);
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!input.trim() || !tenantDetails || !courseMaterial) return;
+
+    // Stop any ongoing speech
+    if (isSpeaking) {
+      setIsSpeaking(false);
+    }
+
+    const userMessage: ChatMessage = {
+      role: 'user',
+      content: input.trim()
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setInput('');
+    resetTranscript();
+    setIsLoading(true);
+
+    try {
+      console.log('Sending request to chatbot with:', {
+        chatHistory: [...messages, userMessage],
+        s3_url: courseMaterial.materialUrl,
+        emergency_details: {
+          presiding_officer_email: tenantDetails.details.presidingOfficerEmail,
+          posh_committee_email: tenantDetails.details.poshCommitteeEmail,
+          hr_contact_name: tenantDetails.details.hrContactName,
+          hr_contact_email: tenantDetails.details.hrContactEmail,
+          hr_contact_phone: tenantDetails.details.hrContactPhone
+        }
+      });
+
+      const response = await fetch('http://192.168.0.42:8000/chatbot', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          chatHistory: [...messages, userMessage],
+          s3_url: courseMaterial.materialUrl,
+          emergency_details: {
+            presiding_officer_email: tenantDetails.details.presidingOfficerEmail,
+            posh_committee_email: tenantDetails.details.poshCommitteeEmail,
+            hr_contact_name: tenantDetails.details.hrContactName,
+            hr_contact_email: tenantDetails.details.hrContactEmail,
+            hr_contact_phone: tenantDetails.details.hrContactPhone
+          }
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        console.error('Error response:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData
+        });
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('Chatbot response:', data);
+      
+      const assistantMessage: ChatMessage = {
+        role: 'assistant',
+        content: data.response
+      };
+
+      setMessages(prev => [...prev, assistantMessage]);
+
+      // Automatically speak the response
+      await handleSpeakResponse(data.response);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast.error('Failed to get response from AI service');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <Card className={`transition-all duration-300 overflow-hidden ${isExpanded ? 'h-[400px]' : 'h-auto'}`}>
-      <div className="p-4 border-b flex justify-between items-center">
-        <h3 className="text-lg font-medium">AI Learning Assistant</h3>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={toggleExpand}
-          className="text-sm"
-        >
-          {isExpanded ? "Minimize" : "Expand"}
-        </Button>
+    <Card className="w-full max-w-2xl mx-auto mt-8">
+      <div className="p-4 border-b">
+        <h3 className="font-semibold">Chat Help</h3>
+        <p className="text-sm text-gray-500">Ask questions about: {slideTitle}</p>
       </div>
 
-      {isExpanded && (
-        <ScrollArea className="h-[280px] p-4">
+      <ScrollArea className="h-[400px] p-4">
           <div className="space-y-4">
-            {chatMessages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`flex ${msg.isUser ? "justify-end" : "justify-start"}`}
-              >
+          {messages.map((message, index) => (
+            <div
+              key={index}
+              className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+            >
+              <div className="flex flex-col gap-2">
                 <div
-                  className={`max-w-[80%] px-4 py-2 rounded-lg ${
-                    msg.isUser
-                      ? "bg-complybrand-700 text-white"
-                      : "bg-gray-100 text-gray-800"
+                  className={`max-w-[80%] rounded-lg p-3 ${
+                    message.role === 'user'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted'
                   }`}
                 >
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="font-medium text-xs">
-                      {msg.isUser ? "You" : "AI Assistant"}
-                    </span>
-                    <span className="text-xs opacity-70">{formatTime(msg.timestamp)}</span>
+                  {message.content}
                   </div>
-                  <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
+                {message.role === 'assistant' && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="self-start hover:bg-muted/50"
+                    onClick={() => handleSpeakResponse(message.content)}
+                    title={isSpeaking ? 'Stop Speaking' : 'Play Speech'}
+                  >
+                    {isSpeaking ? (
+                      <VolumeX className="h-4 w-4" />
+                    ) : (
+                      <Volume2 className="h-4 w-4" />
+                    )}
+                  </Button>
+                )}
                 </div>
               </div>
             ))}
+          <div ref={messagesEndRef} />
           </div>
         </ScrollArea>
-      )}
 
-      <div className="p-4 flex items-center">
-        {!isExpanded && <MessageCircle className="w-5 h-5 mr-2 text-complybrand-700" />}
-        <div className="flex-1 relative">
-          <textarea
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            onKeyDown={handleKeyPress}
-            placeholder="Ask a question about this slide..."
-            className="w-full px-4 py-2 pr-10 border rounded-md focus:outline-none focus:ring-2 focus:ring-complybrand-500 resize-none"
-            rows={isExpanded ? 2 : 1}
+      <div className="p-4 border-t flex gap-2">
+        <div className="flex-1 flex gap-2">
+          <Input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder={listening ? 'Listening...' : 'Type your question...'}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSendMessage();
+              }
+            }}
+            disabled={isLoading || !tenantDetails || !courseMaterial || isSpeaking}
           />
+          {browserSupportsSpeechRecognition && (
           <Button
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 h-auto"
-            size="sm"
-            variant="ghost"
-            onClick={handleSendMessage}
-            disabled={!inputText.trim()}
-          >
-            <SendHorizontal className="h-4 w-4" />
+              variant="outline"
+              size="icon"
+              onClick={listening ? stopListening : startListening}
+              disabled={isLoading}
+            >
+              {listening ? (
+                <MicOff className="h-4 w-4 text-red-500" />
+              ) : (
+                <Mic className="h-4 w-4" />
+              )}
           </Button>
+          )}
         </div>
         <Button
           onClick={handleSendMessage}
-          className="ml-2 bg-complybrand-700 hover:bg-complybrand-800"
-          disabled={!inputText.trim()}
+          disabled={isLoading || !input.trim() || !tenantDetails || !courseMaterial || isSpeaking}
+          size="icon"
         >
-          Ask
+          {isLoading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Send className="h-4 w-4" />
+          )}
         </Button>
       </div>
     </Card>

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -7,6 +6,7 @@ import SlidePlayer from "@/components/course/SlidePlayer";
 import CourseHeader from "@/components/course/CourseHeader";
 import CourseNotFound from "@/components/course/CourseNotFound";
 import { useQuery } from "@tanstack/react-query";
+import ChatHelp from "@/components/course/ChatHelp";
 
 // API endpoints for a real implementation
 const API_ENDPOINTS = {
@@ -50,125 +50,130 @@ const fetchPersonalizedExplanations = async (courseId: string, organizationId: s
   });
 };
 
+interface Slide {
+  id: string;
+  title: string;
+  content: string;
+  completed: boolean;
+}
+
 interface EnhancedSlide extends Slide {
   explanation?: string;
 }
+
+// Mock data for testing
+const mockSlides: Slide[] = [
+  {
+    id: "slide1",
+    title: "Introduction to Data Privacy",
+    content: "This course will cover the essential aspects of data privacy regulations including GDPR, CCPA, and industry best practices.",
+    completed: false
+  },
+  {
+    id: "slide2",
+    title: "Key GDPR Requirements",
+    content: "The General Data Protection Regulation (GDPR) is a comprehensive privacy law that protects EU citizens. Learn about its key requirements and how they affect your organization.",
+    completed: false
+  },
+  {
+    id: "slide3",
+    title: "CCPA Compliance",
+    content: "The California Consumer Privacy Act (CCPA) gives California residents specific rights regarding their personal information. This section explains what businesses need to do for compliance.",
+    completed: false
+  }
+];
+
+const mockExplanations = {
+  "slide1": "In this organization, data privacy is crucial because...",
+  "slide2": "GDPR requirements are particularly important for our industry because...",
+  "slide3": "CCPA compliance affects our business operations in the following ways..."
+};
 
 const CoursePlayer = () => {
   const { courseId } = useParams<{ courseId: string }>();
   const navigate = useNavigate();
   
-  const [slides, setSlides] = useState<EnhancedSlide[]>([]);
+  // Get tenant ID from localStorage
+  const tenantId = localStorage.getItem('tenantId');
+  const token = localStorage.getItem('token');
+  
+  console.log('CoursePlayer mounted with:', {
+    courseId,
+    token,
+    tenantId
+  });
+
+  const [slides, setSlides] = useState<Slide[]>([]);
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [courseCompleted, setCourseCompleted] = useState(false);
   
-  // Mock organization ID - in a real app, this would come from user context/auth
-  const organizationId = "webknot";
-  
-  // Fetch course slides - in a real implementation, this would be an API call
+  // Initialize with mock data
   useEffect(() => {
-    // In a real app, this would be fetched from the backend:
-    // GET /api/courses/:courseId/slides
-    if (courseId && coursesSlides[courseId]) {
-      setSlides([...coursesSlides[courseId]]);
-      
-      // Here's how you would fetch the actual slides in a real implementation:
-      /*
-      const fetchSlides = async () => {
-        try {
-          const response = await fetch(API_ENDPOINTS.GET_COURSE_SLIDES(courseId));
-          if (!response.ok) throw new Error('Failed to fetch slides');
-          
-          const slideData = await response.json();
-          setSlides(slideData);
-        } catch (error) {
-          toast.error("Failed to load course slides");
-          console.error(error);
-        }
-      };
-      
-      fetchSlides();
-      */
-    }
-  }, [courseId]);
-  
-  // Fetch personalized explanations
-  const { data: explanations, isLoading: isLoadingExplanations } = useQuery({
-    queryKey: ['explanations', courseId, organizationId],
-    queryFn: () => courseId ? fetchPersonalizedExplanations(courseId, organizationId) : Promise.resolve({}),
-    enabled: !!courseId && slides.length > 0,
-  });
-  
-  // Merge explanations with slides once both are loaded
-  useEffect(() => {
-    if (explanations && slides.length > 0) {
-      const enhancedSlides = slides.map((slide, index) => ({
-        ...slide,
-        explanation: explanations[`slide-${index + 1}`] || slide.content
-      }));
-      setSlides(enhancedSlides);
-    }
-  }, [explanations, slides.length]);
-  
-  if (!slides.length) {
-    return <CourseNotFound />;
-  }
+    console.log('Setting mock slides and explanations');
+    setSlides(mockSlides);
+  }, []);
 
   const handleSlideChange = (index: number) => {
-    // Mark previous slides as completed
-    const updatedSlides = [...slides];
-    for (let i = 0; i <= Math.min(currentSlideIndex, index); i++) {
-      updatedSlides[i].completed = true;
-    }
-    
-    setSlides(updatedSlides);
+    console.log('Changing slide from', currentSlideIndex, 'to', index);
     setCurrentSlideIndex(index);
   };
-  
+
   const handleCourseComplete = () => {
-    // Mark all slides as completed
-    const updatedSlides = slides.map(slide => ({ ...slide, completed: true }));
-    setSlides(updatedSlides);
+    console.log('Course completed');
     setCourseCompleted(true);
-    
-    toast.success("Course content completed! Now take the assessment quiz.", {
-      duration: 5000,
-    });
-    
-    // Update progress in backend
-    // In a real implementation:
-    // fetch(API_ENDPOINTS.UPDATE_PROGRESS(courseId), {
-    //   method: 'PUT',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({ status: "completed", slides: slides.length })
-    // });
-    
-    // Navigate to the quiz page
-    navigate(`/course/${courseId}/quiz`);
+    toast.success('Course completed successfully!');
   };
-  
+
   const handleReturnToDashboard = () => {
+    console.log('Returning to dashboard');
     navigate('/dashboard');
   };
 
+  if (!courseId) {
+    console.log('No courseId found, showing CourseNotFound');
+    return <CourseNotFound onReturn={handleReturnToDashboard} />;
+  }
+
+  if (slides.length === 0) {
+    console.log('No slides loaded, showing loading spinner');
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-complybrand-700"></div>
+      </div>
+    );
+  }
+
+  console.log('Rendering CoursePlayer with:', {
+    currentSlideIndex,
+    totalSlides: slides.length,
+    currentSlide: slides[currentSlideIndex]
+  });
+
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen bg-gray-50">
       <CourseHeader 
-        courseId={courseId || ""} 
-        onReturnToDashboard={handleReturnToDashboard} 
+        courseTitle={slides[currentSlideIndex]?.title || "Course Player"}
+        onReturn={handleReturnToDashboard}
       />
       
-      <main className="flex-grow pt-8 pb-16 px-4">
-        <div className="max-w-7xl mx-auto">
-          <SlidePlayer
-            slides={slides}
-            currentSlideIndex={currentSlideIndex}
-            onSlideChange={handleSlideChange}
-            onComplete={handleCourseComplete}
-            isLoadingExplanations={isLoadingExplanations}
+      <div className="container mx-auto px-4 py-8">
+        <SlidePlayer
+          slides={slides}
+          currentSlideIndex={currentSlideIndex}
+          onSlideChange={handleSlideChange}
+          onComplete={handleCourseComplete}
+          explanations={mockExplanations}
+          isLoadingExplanations={false}
+        />
+
+        {tenantId && (
+          <ChatHelp
+            slideTitle={slides[currentSlideIndex]?.title || ""}
+            slideContent={slides[currentSlideIndex]?.content || ""}
+            tenantId={tenantId}
           />
-        </div>
-      </main>
+        )}
+      </div>
     </div>
   );
 };

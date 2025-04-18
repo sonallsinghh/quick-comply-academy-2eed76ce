@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -56,14 +55,14 @@ const CourseCard = ({
         )}
       </CardContent>
       <CardFooter className="bg-gray-50 border-t border-gray-100 flex justify-between">
-        <Link to={`/course/${id}`}>
+        <Link to={`/dashboard/course/${id}`}>
           <Button variant="outline" className="text-complybrand-700 border-complybrand-700">
             {userRole === "employee" ? "Continue" : "View Details"}
           </Button>
         </Link>
         
         {userRole === "employee" && (
-          <Link to={`/course/${id}/play`}>
+          <Link to={`/dashboard/course/${id}/play`}>
             <Button className="bg-complybrand-700 hover:bg-complybrand-800">
               <Book className="mr-2 h-4 w-4" />
               {progress > 0 ? "Resume Course" : "Start Course"}

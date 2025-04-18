@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, LogIn, AtSign, Mail, ArrowLeft } from "lucide-react";
 import { UserRole } from "../../App";
@@ -29,6 +29,21 @@ const Navbar = ({ userRole, onLogin }: NavbarProps) => {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get('token');
+  const tenantId = searchParams.get('tenantId');
+
+  useEffect(() => {
+    if (token && tenantId) {
+      // Store token and tenant ID in localStorage
+      localStorage.setItem('token', token);
+      localStorage.setItem('tenantId', tenantId);
+      
+      // Remove token and tenantId from URL
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, [token, tenantId]);
 
   const openLoginDialog = (type: "admin" | "employee") => {
     setLoginType(type);
@@ -105,14 +120,21 @@ const Navbar = ({ userRole, onLogin }: NavbarProps) => {
           body: requestBody
         });
 
+        // Add timeout to the fetch request
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
         const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/login`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
           },
-          body: JSON.stringify(requestBody)
+          body: JSON.stringify(requestBody),
+          signal: controller.signal
         });
+
+        clearTimeout(timeoutId);
 
         console.log('Response Status:', response.status);
         console.log('Response Headers:', Object.fromEntries(response.headers.entries()));
@@ -173,7 +195,15 @@ const Navbar = ({ userRole, onLogin }: NavbarProps) => {
         setLoginDialogOpen(false);
       } catch (error) {
         console.error('Login error:', error);
-        setErrorMessage(error instanceof Error ? error.message : "Login failed. Please try again.");
+        if (error instanceof Error) {
+          if (error.name === 'AbortError') {
+            setErrorMessage("Connection timed out. Please check if the server is running and accessible.");
+          } else {
+            setErrorMessage(error.message || "Login failed. Please try again.");
+          }
+        } else {
+          setErrorMessage("Login failed. Please try again.");
+        }
         setErrorDialogOpen(true);
       }
     } else {

@@ -14,14 +14,12 @@ const Certificate: React.FC<CertificateProps> = ({ courseName, completionDate, s
   const downloadCertificate = async () => {
     if (certificateRef.current) {
       try {
-        // Dynamically import html2canvas only when needed
         const html2canvas = (await import('html2canvas')).default;
-        
         const canvas = await html2canvas(certificateRef.current, {
           scale: 2,
           backgroundColor: '#ffffff',
-          logging: true, // Enable logging for debugging
-          useCORS: true, // Enable CORS for images
+          logging: true,
+          useCORS: true,
         });
 
         const link = document.createElement('a');
@@ -38,57 +36,77 @@ const Certificate: React.FC<CertificateProps> = ({ courseName, completionDate, s
     <div className="space-y-4">
       <div
         ref={certificateRef}
-        className="relative w-[800px] h-[600px] mx-auto bg-white p-8 rounded-lg shadow-lg border-8 border-double border-primary/20"
+        className="relative w-[800px] h-[600px] mx-auto bg-white p-12"
         style={{
-          background: 'linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%)',
+          background: '#ffffff',
         }}
       >
-        {/* Certificate Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-serif text-gray-800 mb-2">Certificate of Completion</h1>
-          <div className="w-32 h-1 bg-primary/20 mx-auto"></div>
+        {/* Corner Borders */}
+        <div className="absolute top-0 left-0 w-16 h-16 border-l-2 border-t-2 border-gray-800"></div>
+        <div className="absolute top-0 right-0 w-16 h-16 border-r-2 border-t-2 border-gray-800"></div>
+        <div className="absolute bottom-0 left-0 w-16 h-16 border-l-2 border-b-2 border-gray-800"></div>
+        <div className="absolute bottom-0 right-0 w-16 h-16 border-r-2 border-b-2 border-gray-800"></div>
+
+        {/* Inner Border */}
+        <div className="absolute inset-8 border-2 border-gray-800"></div>
+
+        {/* Company Logo */}
+        <div className="absolute top-8 right-12">
+          <span className="text-xl font-bold text-gray-800">ComplyQuick</span>
         </div>
 
         {/* Certificate Content */}
-        <div className="text-center space-y-6">
-          <p className="text-xl text-gray-600">This is to certify that</p>
-          <p className="text-3xl font-serif text-gray-800 border-b-2 border-gray-300 pb-2 mx-auto w-2/3">
-            {localStorage.getItem('userName') || 'Student Name'}
-          </p>
-          
-          <p className="text-xl text-gray-600 mt-6">
-            has successfully completed the course
-          </p>
-          
-          <p className="text-2xl font-serif text-gray-800 font-bold">
-            {courseName}
-          </p>
-          
-          <p className="text-xl text-gray-600">
-            with a score of
-          </p>
-          
-          <p className="text-3xl font-serif text-gray-800 font-bold">
-            {score}%
-          </p>
-
-          <div className="mt-12 flex justify-between items-end px-12">
-            <div className="text-center">
-              <div className="w-48 h-px bg-gray-400"></div>
-              <p className="text-gray-600 mt-2">Course Instructor</p>
+        <div className="flex flex-col h-full justify-between relative z-10 px-16 py-8">
+          <div className="space-y-6 text-left">
+            <div>
+              <h1 className="text-4xl font-bold text-gray-900">CERTIFICATE</h1>
+              <h2 className="text-2xl text-gray-800">OF COMPLETION</h2>
             </div>
-            
-            <div className="text-center">
-              <p className="text-gray-600 mb-4">{completionDate}</p>
-              <div className="w-48 h-px bg-gray-400"></div>
-              <p className="text-gray-600 mt-2">Date of Completion</p>
+
+            <div className="space-y-8">
+              <div>
+                <p className="text-xl text-gray-600">Presented to:</p>
+                <p className="text-4xl font-bold text-gray-900 mt-2">
+                  {localStorage.getItem('userName') || 'Student Name'}
+                </p>
+              </div>
+
+              <p className="text-xl text-gray-600">
+                For successfully completing a compliance course on<br />
+                <span className="font-semibold text-gray-800">"{courseName}"</span>
+              </p>
             </div>
           </div>
-        </div>
 
-        {/* Certificate Footer */}
-        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-center">
-          <p className="text-sm text-gray-500">Verify this certificate at: verify.complyquick.com</p>
+          <div className="flex justify-between items-end">
+            <div className="space-y-2">
+              <div className="w-48 h-px bg-gray-800"></div>
+              <div>
+                <p className="font-bold text-gray-800">TARA BOWEN</p>
+                <p className="text-gray-600">Project Manager</p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="w-48 h-px bg-gray-800"></div>
+              <div>
+                <p className="font-bold text-gray-800">KAREN BELL</p>
+                <p className="text-gray-600">Company Director</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Gold Seal */}
+          <div className="absolute top-1/3 right-12 transform -translate-y-1/2">
+            <div className="w-32 h-32 relative">
+              <div className="absolute inset-0 rounded-full bg-gradient-to-b from-yellow-300 to-yellow-500 flex items-center justify-center">
+                <div className="text-center text-white">
+                  <div className="text-sm mb-1">COMPLETION</div>
+                  <div className="text-2xl font-bold">2025</div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

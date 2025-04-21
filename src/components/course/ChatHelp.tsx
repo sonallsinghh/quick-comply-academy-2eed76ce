@@ -292,7 +292,7 @@ const ChatHelp = ({ slideTitle, slideContent, tenantId }: ChatHelpProps) => {
         }
       });
 
-      const response = await fetch('http://192.168.0.42:8000/chatbot', {
+      const response = await fetch('http://localhost:8000/chatbot', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

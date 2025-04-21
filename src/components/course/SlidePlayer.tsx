@@ -307,84 +307,57 @@ const SlidePlayer = ({
   };
 
   return (
-    <div className="flex flex-col lg:flex-row gap-4">
-      {/* Sidebar with slide navigation and subtitles */}
-      <div className="lg:w-1/4 space-y-4">
-        <SlideNavigation 
-          slides={slides}
-          currentIndex={currentSlideIndex}
-          overallProgress={overallProgress}
-          onSlideSelect={handleSlideSelect}
-        />
-        
-        {/* Subtitles/Explanations Panel */}
-        <AnimatePresence mode="wait">
-          {showSubtitles && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-              transition={{ duration: 0.3 }}
-              className="mt-4"
-            >
-              <Card className="p-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-pink-100/50 dark:border-purple-900/30">
-                <div className="flex items-center gap-3 mb-3">
-                  <Avatar className="h-10 w-10 border-2 border-purple-200 dark:border-purple-900">
-                    <AvatarImage src="/placeholder.svg" alt="Presenter" />
-                    <AvatarFallback className="bg-gradient-to-br from-pink-400 to-purple-600 text-white">
-                      P
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">Virtual Presenter</h4>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Personalized Explanation</p>
-                  </div>
-                </div>
-                
-                {isLoadingExplanations ? (
-                  <div className="animate-pulse h-32 bg-gray-200 dark:bg-gray-700 rounded-md" />
-                ) : (
-                  <div className="prose prose-sm dark:prose-invert max-w-none">
-                    <p className="text-gray-700 dark:text-gray-300">{explanations[currentSlide.id] || currentSlide.content}</p>
-                  </div>
-                )}
-              </Card>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-      
-      {/* Main content area */}
-      <div className="lg:w-3/4">
-        <Card className="p-6 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md border border-pink-100/50 dark:border-purple-900/30 shadow-lg">
-          <SlideContent
-            title={currentSlide.title}
-            content={currentSlide.content}
-            currentIndex={currentSlideIndex}
-            totalSlides={slides.length}
-            progress={progress}
-            isPlaying={isPlaying}
-          />
-          
-          <SlideControls 
-            isPlaying={isPlaying}
-            togglePlayback={togglePlayback}
-            handlePrev={handlePrev}
-            handleNext={handleNext}
-            isFirstSlide={isFirstSlide}
-            isLastSlide={isLastSlide}
-            isMuted={isMuted}
-            toggleMute={toggleMute}
-            volume={volume}
-            handleVolumeChange={handleVolumeChange}
-            playbackRate={playbackRate}
-            changePlaybackRate={changePlaybackRate}
-            onComplete={handleComplete}
-            showSubtitles={showSubtitles}
-            toggleSubtitles={toggleSubtitles}
-            canAdvance={canAdvance}
-          />
-        </Card>
+    <div className="h-full flex flex-col">
+      <div className="flex-1 flex flex-col lg:flex-row gap-4 p-4">
+        {/* Left Column - Main Slide and Controls */}
+        <div className="flex-1 flex flex-col">
+          {/* Main Slide Content */}
+          <div className="flex-1 bg-white dark:bg-gray-800 rounded-t-xl p-6">
+            <SlideContent
+              title={currentSlide.title}
+              content={currentSlide.content}
+              isLoading={isLoadingExplanations}
+            />
+          </div>
+
+          {/* Media Controls */}
+          <div className="bg-white dark:bg-gray-800 rounded-b-xl p-4 border-t border-gray-200 dark:border-gray-700">
+            <SlideControls
+              isPlaying={isPlaying}
+              togglePlayback={togglePlayback}
+              handlePrev={handlePrev}
+              handleNext={handleNext}
+              isFirstSlide={isFirstSlide}
+              isLastSlide={isLastSlide}
+              isMuted={isMuted}
+              toggleMute={toggleMute}
+              volume={volume}
+              handleVolumeChange={handleVolumeChange}
+              playbackRate={playbackRate}
+              changePlaybackRate={changePlaybackRate}
+              onComplete={handleComplete}
+              showSubtitles={showSubtitles}
+              toggleSubtitles={toggleSubtitles}
+              canAdvance={canAdvance}
+            />
+          </div>
+        </div>
+
+        {/* Right Column - Slide Navigation */}
+        <div className="lg:w-72">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sticky top-4">
+            <SlideNavigation
+              slides={slides}
+              currentIndex={currentSlideIndex}
+              onSlideSelect={handleSlideSelect}
+              onNext={handleNext}
+              onPrev={handlePrev}
+              isFirstSlide={isFirstSlide}
+              isLastSlide={isLastSlide}
+              overallProgress={overallProgress}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

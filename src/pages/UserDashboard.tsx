@@ -18,19 +18,17 @@ interface Course {
   progress: number;
 }
 
-interface CourseProgress {
-  courseName: string;
-  progress: number;
-  slidesCompleted: number;
-  totalSlides: number;
-  quizScore: number | null;
-  certificateIssued: boolean;
+interface UserProfile {
+  success: boolean;
+  name: string;
+  email: string;
 }
 
 const UserDashboard = () => {
   const [activeTab, setActiveTab] = useState<"all" | "inProgress" | "completed">("all");
   const [courses, setCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [searchParams] = useSearchParams();
   const tenantId = searchParams.get('tenantId');
   const token = searchParams.get('token');
@@ -42,6 +40,38 @@ const UserDashboard = () => {
       console.log('Stored tenantId in localStorage:', tenantId);
     }
   }, [tenantId]);
+
+  // Fetch user profile
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!token) {
+        console.error('No token available');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/user-dashboard/profile`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch user profile');
+        }
+
+        const data = await response.json();
+        setUserProfile(data);
+        console.log('Fetched user profile:', data);
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+        toast.error('Failed to load user profile');
+      }
+    };
+
+    fetchUserProfile();
+  }, [token]);
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -120,12 +150,12 @@ const UserDashboard = () => {
             <div className="lg:w-1/4">
               <Card className="animate-fade-in hover:shadow-md transition-all duration-300 overflow-hidden bg-card/50 backdrop-blur-sm border border-border/50">
                 <CardHeader className="pb-2">
-                  <CardTitle>Welcome back!</CardTitle>
+                  <CardTitle>Welcome back, {userProfile?.name || 'Employee'}!</CardTitle>
                   <CardDescription>Your training dashboard</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="mb-6">
-                    <h3 className="font-medium text-lg">Employee</h3>
+                    <h3 className="font-medium text-lg">{userProfile?.email || 'Employee'}</h3>
                     <p className="text-gray-500 text-sm">Tenant ID: {tenantId}</p>
                   </div>
                   

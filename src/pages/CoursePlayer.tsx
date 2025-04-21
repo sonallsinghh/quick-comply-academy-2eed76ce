@@ -3,10 +3,11 @@ import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { coursesSlides, Slide } from "@/data/courseSlides";
 import SlidePlayer from "@/components/course/SlidePlayer";
-import CourseHeader from "@/components/course/CourseHeader";
 import CourseNotFound from "@/components/course/CourseNotFound";
 import { useQuery } from "@tanstack/react-query";
 import ChatHelp from "@/components/course/ChatHelp";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
 
 // API endpoints for a real implementation
 const API_ENDPOINTS = {
@@ -126,7 +127,7 @@ const CoursePlayer = () => {
 
   const handleReturnToDashboard = () => {
     console.log('Returning to dashboard');
-    navigate('/dashboard');
+    navigate(`/dashboard?tenantId=${tenantId}&token=${token}`);
   };
 
   if (!courseId) {
@@ -150,29 +151,44 @@ const CoursePlayer = () => {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <CourseHeader 
-        courseTitle={slides[currentSlideIndex]?.title || "Course Player"}
-        onReturn={handleReturnToDashboard}
-      />
-      
-      <div className="container mx-auto px-4 py-8">
-        <SlidePlayer
-          slides={slides}
-          currentSlideIndex={currentSlideIndex}
-          onSlideChange={handleSlideChange}
-          onComplete={handleCourseComplete}
-          explanations={mockExplanations}
-          isLoadingExplanations={false}
-        />
+    <div className="h-screen flex flex-col bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+      <div className="flex-1 flex flex-col max-h-screen">
+        <div className="flex-1 flex flex-col lg:flex-row gap-4 p-4">
+          <div className="flex-1 flex flex-col">
+            <div className="flex-1 bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+              <SlidePlayer
+                slides={slides}
+                currentSlideIndex={currentSlideIndex}
+                onSlideChange={handleSlideChange}
+                onComplete={handleCourseComplete}
+                explanations={mockExplanations}
+                isLoadingExplanations={false}
+              />
+            </div>
+          </div>
 
-        {tenantId && (
-          <ChatHelp
-            slideTitle={slides[currentSlideIndex]?.title || ""}
-            slideContent={slides[currentSlideIndex]?.content || ""}
-            tenantId={tenantId}
-          />
-        )}
+          {tenantId && (
+            <div className="lg:w-96 bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+              <ChatHelp
+                slideTitle={slides[currentSlideIndex]?.title || ""}
+                slideContent={slides[currentSlideIndex]?.content || ""}
+                tenantId={tenantId}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Return to Dashboard Button */}
+      <div className="fixed bottom-4 right-4">
+        <Button
+          variant="outline"
+          onClick={handleReturnToDashboard}
+          className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm hover:bg-white dark:hover:bg-gray-800"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Return to Dashboard
+        </Button>
       </div>
     </div>
   );

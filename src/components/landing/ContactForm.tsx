@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,12 +23,28 @@ const ContactForm = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     
-    // Simulate form submission
-    setTimeout(() => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/contact/submit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fullName: formData.name,
+          email: formData.email,
+          organization: formData.organization,
+          message: formData.message
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to submit contact request');
+      }
+
       setIsSubmitting(false);
       setIsSubmitted(true);
       toast.success("Thank you for your message! We'll be in touch soon.", {
@@ -46,7 +61,13 @@ const ContactForm = () => {
           message: "",
         });
       }, 3000);
-    }, 1500);
+    } catch (error) {
+      setIsSubmitting(false);
+      toast.error("Failed to submit contact request. Please try again later.", {
+        duration: 5000,
+      });
+      console.error('Error submitting contact request:', error);
+    }
   };
 
   return (

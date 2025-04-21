@@ -341,10 +341,10 @@ const AdminDashboard = () => {
                       No users found in your organization.
                     </div>
                   ) : (
-                    <UsersList 
+                  <UsersList 
                       users={users.slice(0, 3)} 
-                      title="Recent User Activity" 
-                    />
+                    title="Recent User Activity" 
+                  />
                   )}
                   <div className="mt-4 flex justify-end">
                     <Button 
@@ -399,7 +399,7 @@ const AdminDashboard = () => {
                     <div className="grid gap-4 md:grid-cols-3">
                       {courses.map((course) => (
                         <Card 
-                          key={course.id} 
+                        key={course.id}
                           className="hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 overflow-hidden bg-card/50 backdrop-blur-sm border border-border/50 cursor-pointer"
                           onClick={() => handleCourseSelect(course)}
                         >
@@ -414,8 +414,8 @@ const AdminDashboard = () => {
                             <p>Target Audience: {course.targetAudience}</p>
                           </CardContent>
                         </Card>
-                      ))}
-                    </div>
+                    ))}
+                  </div>
                   )}
                 </CardContent>
               </Card>

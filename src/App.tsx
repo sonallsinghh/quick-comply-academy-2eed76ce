@@ -18,6 +18,7 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { motion } from "framer-motion";
 import Quiz from '@/components/course/Quiz';
 import QuizResults from './pages/QuizResults';
+import Certificate from '@/components/course/Certificate';
 
 // Mock authentication for demonstration purposes
 // In a real app, we'd use proper authentication like Auth0, Clerk, or Supabase
@@ -58,6 +59,15 @@ const App = () => {
                 <Route path="/dashboard/course/:courseId/result" element={<ResultPage />} />
                 <Route path="/admin/reports/user/:userId" element={<UserDashboard />} />
                 <Route path="/quiz-results" element={<QuizResults />} />
+                <Route path="/certificate" element={
+                  <div className="min-h-screen flex items-center justify-center p-4">
+                    <Certificate 
+                      courseName="Sample Course"
+                      completionDate={new Date().toLocaleDateString()}
+                      score={95}
+                    />
+                  </div>
+                } />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </div>

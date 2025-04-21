@@ -6,14 +6,10 @@ interface User {
   id: string;
   name: string;
   email: string;
-  role: string;
-  enrollments: {
-    course: {
-      id: string;
-      title: string;
-    };
-    completed: boolean;
-  }[];
+  department: string;
+  coursesCompleted: number;
+  totalCourses: number;
+  lastActivity: string;
 }
 
 interface UsersListProps {
@@ -34,7 +30,7 @@ const UsersList = ({ users, title = "Users" }: UsersListProps) => {
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
-              <TableHead>Role</TableHead>
+              <TableHead>Department</TableHead>
               <TableHead>Courses</TableHead>
               <TableHead>Status</TableHead>
             </TableRow>
@@ -44,31 +40,19 @@ const UsersList = ({ users, title = "Users" }: UsersListProps) => {
               <TableRow key={user.id}>
                 <TableCell className="font-medium">{user.name}</TableCell>
                 <TableCell>{user.email}</TableCell>
-                <TableCell>
-                  <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
-                    {user.role}
-                  </Badge>
-                </TableCell>
+                <TableCell>{user.department}</TableCell>
                 <TableCell>
                   <div className="flex flex-wrap gap-1">
-                    {user.enrollments.length > 0 ? (
-                      user.enrollments.map((enrollment) => (
-                        <Badge key={enrollment.course.id} variant="outline">
-                          {enrollment.course.title}
-                        </Badge>
-                      ))
-                    ) : (
-                      <span className="text-sm text-muted-foreground">No courses</span>
-                    )}
+                    <Badge variant="outline">
+                      {user.coursesCompleted}/{user.totalCourses} Courses
+                    </Badge>
                   </div>
                 </TableCell>
                 <TableCell>
-                  {user.enrollments.length > 0 ? (
-                    user.enrollments.every(e => e.completed) ? (
-                      <Badge variant="success">Completed</Badge>
-                    ) : (
-                      <Badge variant="warning">In Progress</Badge>
-                    )
+                  {user.coursesCompleted === user.totalCourses ? (
+                    <Badge variant="default">Completed</Badge>
+                  ) : user.coursesCompleted > 0 ? (
+                    <Badge variant="outline">In Progress</Badge>
                   ) : (
                     <Badge variant="secondary">Not Started</Badge>
                   )}

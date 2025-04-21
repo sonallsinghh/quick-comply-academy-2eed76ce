@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import SlideControls from "./SlideControls";
@@ -30,7 +29,7 @@ const SlidePlayer = ({
   currentSlideIndex,
   onSlideChange,
   onComplete,
-  isLoadingExplanations = false
+  isLoadingExplanations = false,
 }: SlidePlayerProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(80);
@@ -41,23 +40,23 @@ const SlidePlayer = ({
   const [canAdvance, setCanAdvance] = useState(false);
   const progressTimerRef = useRef<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  
+
   const currentSlide = slides[currentSlideIndex];
   const isLastSlide = currentSlideIndex === slides.length - 1;
   const isFirstSlide = currentSlideIndex === 0;
-  const totalCompleted = slides.filter(slide => slide.completed).length;
+  const totalCompleted = slides.filter((slide) => slide.completed).length;
   const overallProgress = (totalCompleted / slides.length) * 100;
-  
+
   // Initialize audio element
   useEffect(() => {
     // Create an audio element for the narration
     audioRef.current = new Audio();
     audioRef.current.volume = volume / 100;
-    
+
     // In a real implementation, this would be the URL to the audio file for the current slide
     // For now, we'll simulate it
     // audioRef.current.src = `https://example.com/audio/slide-${currentSlideIndex}.mp3`;
-    
+
     return () => {
       if (audioRef.current) {
         audioRef.current.pause();
@@ -65,51 +64,51 @@ const SlidePlayer = ({
       }
     };
   }, []);
-  
+
   // Reset progress when slide changes
   useEffect(() => {
     setProgress(0);
     setCanAdvance(false);
-    
+
     // Clear any existing timer
     if (progressTimerRef.current) {
       window.clearInterval(progressTimerRef.current);
       progressTimerRef.current = null;
     }
-    
+
     // Reset play state
     setIsPlaying(false);
-    
+
     // In a real implementation, update the audio source for the new slide
     // if (audioRef.current) {
     //   audioRef.current.src = `https://example.com/audio/slide-${currentSlideIndex}.mp3`;
     //   audioRef.current.load();
     // }
   }, [currentSlideIndex]);
-  
+
   // Update audio volume and mute state
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.volume = isMuted ? 0 : volume / 100;
     }
   }, [volume, isMuted]);
-  
+
   // Simulate playback - in a real app, this would sync with actual audio/video
   useEffect(() => {
     if (isPlaying) {
       // Start audio playback in a real implementation
       // if (audioRef.current) audioRef.current.play();
-      
+
       // Start progress timer
       progressTimerRef.current = window.setInterval(() => {
-        setProgress(prev => {
-          const nextProgress = prev + (0.5 * playbackRate);
-          
+        setProgress((prev) => {
+          const nextProgress = prev + 0.5 * playbackRate;
+
           // Allow advancing when progress reaches 80%
           if (nextProgress >= 80 && !canAdvance) {
             setCanAdvance(true);
           }
-          
+
           // Auto-pause at end of slide
           if (nextProgress >= 100) {
             setIsPlaying(false);
@@ -119,21 +118,21 @@ const SlidePlayer = ({
             }
             return 100;
           }
-          
+
           return nextProgress;
         });
       }, 100) as unknown as number;
     } else {
       // Pause audio in a real implementation
       // if (audioRef.current) audioRef.current.pause();
-      
+
       // Stop progress timer if not playing
       if (progressTimerRef.current) {
         window.clearInterval(progressTimerRef.current);
         progressTimerRef.current = null;
       }
     }
-    
+
     // Clean up timer on unmount
     return () => {
       if (progressTimerRef.current) {
@@ -141,7 +140,7 @@ const SlidePlayer = ({
       }
     };
   }, [isPlaying, playbackRate, canAdvance]);
-  
+
   // Update playback rate
   useEffect(() => {
     // In a real implementation, update audio playbackRate
@@ -149,18 +148,13 @@ const SlidePlayer = ({
     //   audioRef.current.playbackRate = playbackRate;
     // }
   }, [playbackRate]);
-  
+
   // Simulating playback
   const togglePlayback = () => {
     setIsPlaying(!isPlaying);
   };
-  
+
   const handleNext = () => {
-    if (!canAdvance && progress < 80) {
-      toast.info("Please finish this slide before moving to the next one");
-      return;
-    }
-    
     if (currentSlideIndex < slides.length - 1) {
       onSlideChange(currentSlideIndex + 1);
     } else {
@@ -168,40 +162,40 @@ const SlidePlayer = ({
       onComplete();
     }
   };
-  
+
   const handlePrev = () => {
     if (currentSlideIndex > 0) {
       onSlideChange(currentSlideIndex - 1);
     }
   };
-  
+
   const handleSlideSelect = (index: number) => {
     // Allow navigating to completed slides or the next available
     const maxAllowedIndex = Math.max(
-      slides.findIndex(slide => !slide.completed),
+      slides.findIndex((slide) => !slide.completed),
       currentSlideIndex
     );
-    
+
     if (index <= maxAllowedIndex) {
       onSlideChange(index);
     }
   };
-  
+
   const toggleMute = () => {
     setIsMuted(!isMuted);
   };
-  
+
   const handleVolumeChange = (value: number[]) => {
     setVolume(value[0]);
     if (value[0] > 0 && isMuted) {
       setIsMuted(false);
     }
   };
-  
+
   const changePlaybackRate = (rate: number) => {
     setPlaybackRate(rate);
   };
-  
+
   const toggleSubtitles = () => {
     setShowSubtitles(!showSubtitles);
   };
@@ -210,13 +204,13 @@ const SlidePlayer = ({
     <div className="flex flex-col lg:flex-row gap-4">
       {/* Sidebar with slide navigation and subtitles */}
       <div className="lg:w-1/4 space-y-4">
-        <SlideNavigation 
+        <SlideNavigation
           slides={slides}
           currentIndex={currentSlideIndex}
           overallProgress={overallProgress}
           onSlideSelect={handleSlideSelect}
         />
-        
+
         {/* Subtitles/Explanations Panel */}
         <AnimatePresence mode="wait">
           {showSubtitles && (
@@ -236,16 +230,22 @@ const SlidePlayer = ({
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">Virtual Presenter</h4>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Personalized Explanation</p>
+                    <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      Virtual Presenter
+                    </h4>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Personalized Explanation
+                    </p>
                   </div>
                 </div>
-                
+
                 {isLoadingExplanations ? (
                   <div className="animate-pulse h-32 bg-gray-200 dark:bg-gray-700 rounded-md" />
                 ) : (
                   <div className="prose prose-sm dark:prose-invert max-w-none">
-                    <p className="text-gray-700 dark:text-gray-300">{currentSlide?.explanation || currentSlide?.content}</p>
+                    <p className="text-gray-700 dark:text-gray-300">
+                      {currentSlide?.explanation || currentSlide?.content}
+                    </p>
                   </div>
                 )}
               </Card>
@@ -253,7 +253,7 @@ const SlidePlayer = ({
           )}
         </AnimatePresence>
       </div>
-      
+
       {/* Main content area */}
       <div className="lg:w-3/4">
         <Card className="p-6 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md border border-pink-100/50 dark:border-purple-900/30 shadow-lg">
@@ -264,9 +264,10 @@ const SlidePlayer = ({
             totalSlides={slides.length}
             progress={progress}
             isPlaying={isPlaying}
+            onSlideChange={onSlideChange}
           />
-          
-          <SlideControls 
+
+          <SlideControls
             isPlaying={isPlaying}
             togglePlayback={togglePlayback}
             handlePrev={handlePrev}
@@ -285,7 +286,7 @@ const SlidePlayer = ({
             canAdvance={canAdvance}
           />
         </Card>
-        
+
         {/* Chat Help section */}
         <div className="mt-6">
           <ChatHelp

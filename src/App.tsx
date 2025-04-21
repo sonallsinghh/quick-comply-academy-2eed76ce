@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -27,7 +26,7 @@ const queryClient = new QueryClient();
 const App = () => {
   // Mock auth state - in a real app, this would use proper auth context
   const [userRole, setUserRole] = useState<UserRole>(null);
-  
+
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
@@ -37,7 +36,7 @@ const App = () => {
           <BrowserRouter>
             <div className="relative">
               {/* Global Theme Toggle */}
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.5, duration: 0.3 }}
@@ -48,14 +47,32 @@ const App = () => {
 
               <Routes>
                 <Route path="/" element={<Index setUserRole={setUserRole} />} />
-                <Route path="/superuser/dashboard" element={<SuperUserDashboard />} />
+                <Route
+                  path="/superuser/dashboard"
+                  element={<SuperUserDashboard />}
+                />
                 <Route path="/admin/dashboard" element={<AdminDashboard />} />
                 <Route path="/dashboard" element={<UserDashboard />} />
-                <Route path="/course/:courseId" element={<CourseDetails />} />
-                <Route path="/course/:courseId/play" element={<CoursePlayer />} />
-                <Route path="/course/:courseId/quiz" element={<QuizPage />} />
-                <Route path="/course/:courseId/result" element={<ResultPage />} />
-                <Route path="/admin/reports/user/:userId" element={<UserDashboard />} />
+                <Route
+                  path="/course/:courseTenantId"
+                  element={<CourseDetails />}
+                />
+                <Route
+                  path="/course/:courseTenantId/play"
+                  element={<CoursePlayer />}
+                />
+                <Route
+                  path="/course/:courseTenantId/quiz"
+                  element={<QuizPage />}
+                />
+                <Route
+                  path="/course/:courseTenantId/result"
+                  element={<ResultPage />}
+                />
+                <Route
+                  path="/admin/reports/user/:userId"
+                  element={<UserDashboard />}
+                />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </div>

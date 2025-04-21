@@ -3,17 +3,17 @@ import { Card } from "@/components/ui/card";
 import SlideControls from "./SlideControls";
 import SlideNavigation from "./SlideNavigation";
 import SlideContent from "./SlideContent";
-import ChatHelp from "./ChatHelp";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { useNavigate, useSearchParams, useParams } from 'react-router-dom';
 
 interface Slide {
   id: string;
   title: string;
   content: string;
   completed: boolean;
-  explanation?: string;
 }
 
 interface SlidePlayerProps {
@@ -21,7 +21,8 @@ interface SlidePlayerProps {
   currentSlideIndex: number;
   onSlideChange: (index: number) => void;
   onComplete: () => void;
-  isLoadingExplanations?: boolean;
+  explanations: Record<string, string>;
+  isLoadingExplanations: boolean;
 }
 
 const SlidePlayer = ({
@@ -40,7 +41,6 @@ const SlidePlayer = ({
   const [canAdvance, setCanAdvance] = useState(false);
   const progressTimerRef = useRef<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-
   const currentSlide = slides[currentSlideIndex];
   const isLastSlide = currentSlideIndex === slides.length - 1;
   const isFirstSlide = currentSlideIndex === 0;
@@ -153,13 +153,12 @@ const SlidePlayer = ({
   const togglePlayback = () => {
     setIsPlaying(!isPlaying);
   };
-
   const handleNext = () => {
     if (currentSlideIndex < slides.length - 1) {
       onSlideChange(currentSlideIndex + 1);
     } else {
       // Last slide - mark course as complete
-      onComplete();
+      handleComplete();
     }
   };
 

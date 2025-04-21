@@ -149,6 +149,7 @@ const UserDashboard = () => {
         <Navbar userRole="employee" />
         <main className="flex-grow pt-16">
           <div className="container mx-auto px-4 py-8">
+
             <div className="flex items-center justify-center h-64">
               <Loader2 className="h-8 w-8 animate-spin text-complybrand-600" />
             </div>
@@ -174,6 +175,7 @@ const UserDashboard = () => {
               >
                 Try Again
               </Button>
+
             </div>
           </div>
         </main>
@@ -188,6 +190,7 @@ const UserDashboard = () => {
       <main className="flex-grow pt-16">
         <div className="container mx-auto px-4 py-8">
           <div className="flex flex-col lg:flex-row gap-8">
+
             <div className="lg:w-1/4 space-y-6">
               <Card className="overflow-hidden bg-card/50 backdrop-blur-sm border border-border/50">
                 <CardHeader>
@@ -197,6 +200,7 @@ const UserDashboard = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
+
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
@@ -234,7 +238,7 @@ const UserDashboard = () => {
                         <Clock className="h-4 w-4 mr-2 text-gray-500" />
                         <span className="text-sm">Due Soon</span>
                       </div>
-                      <span className="font-medium">1</span>
+                      <span className="font-medium">0</span>
                     </div>
                   </div>
                 </CardContent>
@@ -254,6 +258,7 @@ const UserDashboard = () => {
                   />
                 ))}
               </div>
+
             </div>
 
             <div className="lg:w-3/4 animate-fade-in">
@@ -360,6 +365,7 @@ const UserDashboard = () => {
                   </Card>
                 </div>
               )}
+
             </div>
           </div>
         </div>

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, LogIn, AtSign, Mail, ArrowLeft } from "lucide-react";
 import { UserRole } from "../../App";
@@ -29,6 +29,21 @@ const Navbar = ({ userRole, onLogin }: NavbarProps) => {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get('token');
+  const tenantId = searchParams.get('tenantId');
+
+  useEffect(() => {
+    if (token && tenantId) {
+      // Store token and tenant ID in localStorage
+      localStorage.setItem('token', token);
+      localStorage.setItem('tenantId', tenantId);
+      
+      // Remove token and tenantId from URL
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, [token, tenantId]);
 
   const openLoginDialog = (type: "admin" | "employee") => {
     setLoginType(type);
@@ -105,14 +120,21 @@ const Navbar = ({ userRole, onLogin }: NavbarProps) => {
           body: requestBody
         });
 
+        // Add timeout to the fetch request
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
         const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/auth/login`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
           },
-          body: JSON.stringify(requestBody)
+          body: JSON.stringify(requestBody),
+          signal: controller.signal
         });
+
+        clearTimeout(timeoutId);
 
         console.log('Response Status:', response.status);
         console.log('Response Headers:', Object.fromEntries(response.headers.entries()));
@@ -173,7 +195,15 @@ const Navbar = ({ userRole, onLogin }: NavbarProps) => {
         setLoginDialogOpen(false);
       } catch (error) {
         console.error('Login error:', error);
-        setErrorMessage(error instanceof Error ? error.message : "Login failed. Please try again.");
+        if (error instanceof Error) {
+          if (error.name === 'AbortError') {
+            setErrorMessage("Connection timed out. Please check if the server is running and accessible.");
+          } else {
+            setErrorMessage(error.message || "Login failed. Please try again.");
+          }
+        } else {
+          setErrorMessage("Login failed. Please try again.");
+        }
         setErrorDialogOpen(true);
       }
     } else {
@@ -461,7 +491,123 @@ const Navbar = ({ userRole, onLogin }: NavbarProps) => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {/* Employee Login Dialog - Domain Step */}
+      <Dialog open={loginDialogOpen && loginType === "employee" && domainLoginStep === "domain"} onOpenChange={(open) => {
+        setLoginDialogOpen(open);
+        if (!open) {
+          setLoginType("employee");
+          setDomainLoginStep("domain");
+        }
+      }}>
+        <DialogContent className="sm:max-w-[425px] animate-scale-in">
+          <DialogHeader>
+            <DialogTitle>Company Domain</DialogTitle>
+            <DialogDescription>
+              Enter your company domain to continue
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="domain">Company Domain</Label>
+              <div className="flex">
+                <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground">
+                  <AtSign className="h-4 w-4" />
+                </span>
+                <Input 
+                  id="domain" 
+                  name="domain"
+                  type="text" 
+                  placeholder="company.com" 
+                  value={credentials.domain}
+                  onChange={handleCredentialChange}
+                  className="rounded-l-none"
+                />
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Example: company.com, organization.org
+              </p>
+            </div>
+          </div>
+          <DialogFooter className="flex flex-col sm:flex-row sm:justify-between gap-2">
+            <Button 
+              variant="outline" 
+              className="w-full sm:w-auto" 
+              onClick={() => handleLogin("sso")}
+            >
+              Login with SSO
+            </Button>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button variant="outline" onClick={() => setLoginDialogOpen(false)}>Cancel</Button>
+              <Button onClick={handleDomainSubmit} className="bg-complybrand-700 hover:bg-complybrand-800">
+                Continue
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
+      {/* Employee Login Dialog - Credentials Step */}
+      <Dialog open={loginDialogOpen && loginType === "employee" && domainLoginStep === "credentials"} onOpenChange={(open) => {
+        setLoginDialogOpen(open);
+        if (!open) {
+          setLoginType("employee");
+          setDomainLoginStep("domain");
+        }
+      }}>
+        <DialogContent className="sm:max-w-[425px] animate-scale-in">
+          <DialogHeader>
+            <DialogTitle>Employee Login</DialogTitle>
+            <DialogDescription>
+              Login with your {credentials.domain} credentials
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="email">Email</Label>
+              <Input 
+                id="email" 
+                name="email"
+                type="email" 
+                placeholder={`username@${credentials.domain}`}
+                value={credentials.email}
+                onChange={handleCredentialChange}
+                autoComplete="email"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="password">Password</Label>
+              <Input 
+                id="password" 
+                name="password"
+                type="password" 
+                value={credentials.password}
+                onChange={handleCredentialChange}
+                autoComplete="current-password"
+              />
+            </div>
+          </div>
+          <DialogFooter className="flex flex-col sm:flex-row sm:justify-between gap-2">
+            <Button 
+              variant="outline" 
+              onClick={goBackToDomainStep}
+              className="w-full sm:w-auto flex items-center gap-1"
+            >
+              <ArrowLeft className="h-4 w-4" /> Back
+            </Button>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button 
+                variant="outline" 
+                onClick={handleGoogleLogin}
+                className="flex items-center gap-1"
+              >
+                <Mail className="h-4 w-4" />
+                Login with Google
+              </Button>
+              <Button onClick={() => handleLogin()} className="bg-complybrand-700 hover:bg-complybrand-800">Login</Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       {/* Error Dialog */}
       <AlertDialog open={errorDialogOpen} onOpenChange={setErrorDialogOpen}>
         <AlertDialogContent className="animate-scale-in">

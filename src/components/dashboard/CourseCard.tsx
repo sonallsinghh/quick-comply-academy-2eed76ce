@@ -81,6 +81,7 @@ const CourseCard = ({
             <Book className="mr-2 h-4 w-4" />
             {progress > 0 ? "Resume Course" : "Start Course"}
           </Button>
+
         )}
       </CardFooter>
     </Card>

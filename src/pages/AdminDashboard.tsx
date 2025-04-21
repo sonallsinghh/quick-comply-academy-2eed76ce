@@ -35,6 +35,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 
+
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [tenantDetailsDialogOpen, setTenantDetailsDialogOpen] = useState(false);
@@ -48,6 +49,7 @@ const AdminDashboard = () => {
     if (!storedTenantId) {
       console.error("No tenant ID found in localStorage");
       return "";
+
     }
     return storedTenantId;
   });
@@ -233,7 +235,6 @@ const AdminDashboard = () => {
       toast.error("Failed to assign course. Please try again.");
     }
   };
-
   const handleCourseSelect = async (course: any) => {
     setSelectedCourse(course);
     setIsGeneratingVideo(true);
@@ -680,12 +681,16 @@ const AdminDashboard = () => {
               ) : videoUrl ? (
                 <div className="space-y-4">
                   <div className="aspect-video w-full bg-black rounded-lg overflow-hidden">
-                    <video controls className="w-full h-full" src={videoUrl}>
+                    <video 
+                      controls 
+                      className="w-full h-full"
+                      src={videoUrl}
+                    >
                       Your browser does not support the video tag.
                     </video>
                   </div>
                   <div className="flex justify-end">
-                    <Button
+                    <Button 
                       onClick={() => {
                         setSelectedCourse(null);
                         setVideoUrl(null);
@@ -699,10 +704,10 @@ const AdminDashboard = () => {
               ) : (
                 <div className="text-center py-8">
                   <p className="text-muted-foreground">
-                    Click the button below to start generating the video
-                    presentation.
+
+                    Click the button below to start generating the video presentation.
                   </p>
-                  <Button
+                  <Button 
                     onClick={() => handleCourseSelect(selectedCourse)}
                     className="mt-4 bg-complybrand-600 hover:bg-complybrand-700"
                   >

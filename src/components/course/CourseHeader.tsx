@@ -44,7 +44,7 @@ const CourseHeader = ({
           Dashboard
         </Button>
       </div>
-    </div>
+    </header>
   );
 };
 

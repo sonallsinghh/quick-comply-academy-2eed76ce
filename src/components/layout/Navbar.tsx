@@ -491,7 +491,6 @@ const Navbar = ({ userRole, onLogin }: NavbarProps) => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
       {/* Employee Login Dialog - Domain Step */}
       <Dialog open={loginDialogOpen && loginType === "employee" && domainLoginStep === "domain"} onOpenChange={(open) => {
         setLoginDialogOpen(open);
@@ -609,7 +608,6 @@ const Navbar = ({ userRole, onLogin }: NavbarProps) => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
       {/* Error Dialog */}
       <AlertDialog open={errorDialogOpen} onOpenChange={setErrorDialogOpen}>
         <AlertDialogContent className="animate-scale-in">

@@ -30,8 +30,7 @@ const SlidePlayer = ({
   currentSlideIndex,
   onSlideChange,
   onComplete,
-  explanations,
-  isLoadingExplanations,
+  isLoadingExplanations = false,
 }: SlidePlayerProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(80);
@@ -42,26 +41,22 @@ const SlidePlayer = ({
   const [canAdvance, setCanAdvance] = useState(false);
   const progressTimerRef = useRef<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const navigate = useNavigate();
-  const { courseId } = useParams();
-  const [searchParams] = useSearchParams();
-  
   const currentSlide = slides[currentSlideIndex];
   const isLastSlide = currentSlideIndex === slides.length - 1;
   const isFirstSlide = currentSlideIndex === 0;
-  const totalCompleted = slides.filter(slide => slide.completed).length;
+  const totalCompleted = slides.filter((slide) => slide.completed).length;
   const overallProgress = (totalCompleted / slides.length) * 100;
-  
+
   // Initialize audio element
   useEffect(() => {
     // Create an audio element for the narration
     audioRef.current = new Audio();
     audioRef.current.volume = volume / 100;
-    
+
     // In a real implementation, this would be the URL to the audio file for the current slide
     // For now, we'll simulate it
     // audioRef.current.src = `https://example.com/audio/slide-${currentSlideIndex}.mp3`;
-    
+
     return () => {
       if (audioRef.current) {
         audioRef.current.pause();
@@ -69,51 +64,51 @@ const SlidePlayer = ({
       }
     };
   }, []);
-  
+
   // Reset progress when slide changes
   useEffect(() => {
     setProgress(0);
     setCanAdvance(false);
-    
+
     // Clear any existing timer
     if (progressTimerRef.current) {
       window.clearInterval(progressTimerRef.current);
       progressTimerRef.current = null;
     }
-    
+
     // Reset play state
     setIsPlaying(false);
-    
+
     // In a real implementation, update the audio source for the new slide
     // if (audioRef.current) {
     //   audioRef.current.src = `https://example.com/audio/slide-${currentSlideIndex}.mp3`;
     //   audioRef.current.load();
     // }
   }, [currentSlideIndex]);
-  
+
   // Update audio volume and mute state
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.volume = isMuted ? 0 : volume / 100;
     }
   }, [volume, isMuted]);
-  
+
   // Simulate playback - in a real app, this would sync with actual audio/video
   useEffect(() => {
     if (isPlaying) {
       // Start audio playback in a real implementation
       // if (audioRef.current) audioRef.current.play();
-      
+
       // Start progress timer
       progressTimerRef.current = window.setInterval(() => {
-        setProgress(prev => {
-          const nextProgress = prev + (0.5 * playbackRate);
-          
+        setProgress((prev) => {
+          const nextProgress = prev + 0.5 * playbackRate;
+
           // Allow advancing when progress reaches 80%
           if (nextProgress >= 80 && !canAdvance) {
             setCanAdvance(true);
           }
-          
+
           // Auto-pause at end of slide
           if (nextProgress >= 100) {
             setIsPlaying(false);
@@ -123,21 +118,21 @@ const SlidePlayer = ({
             }
             return 100;
           }
-          
+
           return nextProgress;
         });
       }, 100) as unknown as number;
     } else {
       // Pause audio in a real implementation
       // if (audioRef.current) audioRef.current.pause();
-      
+
       // Stop progress timer if not playing
       if (progressTimerRef.current) {
         window.clearInterval(progressTimerRef.current);
         progressTimerRef.current = null;
       }
     }
-    
+
     // Clean up timer on unmount
     return () => {
       if (progressTimerRef.current) {
@@ -145,7 +140,7 @@ const SlidePlayer = ({
       }
     };
   }, [isPlaying, playbackRate, canAdvance]);
-  
+
   // Update playback rate
   useEffect(() => {
     // In a real implementation, update audio playbackRate
@@ -153,114 +148,12 @@ const SlidePlayer = ({
     //   audioRef.current.playbackRate = playbackRate;
     // }
   }, [playbackRate]);
-  
+
   // Simulating playback
   const togglePlayback = () => {
     setIsPlaying(!isPlaying);
   };
-  
-  const handleComplete = async () => {
-    try {
-      const tenantId = localStorage.getItem('tenantId');
-
-      console.log('Parameters check:', {
-        courseId,
-        tenantId,
-        searchParams: Object.fromEntries(searchParams.entries())
-      });
-
-      if (!courseId || !tenantId) {
-        throw new Error(`Missing required parameters. CourseId: ${courseId}, TenantId: ${tenantId}`);
-      }
-
-      // Get the material URL from localStorage
-      const storedMaterialUrl = localStorage.getItem(`course_material_${courseId}`);
-      let s3Url;
-
-      if (!storedMaterialUrl) {
-        console.log('Material URL not found in localStorage, fetching from API...');
-        // If not in localStorage, fetch it
-        const materialResponse = await fetch(
-          `${import.meta.env.VITE_BACKEND_URL}/api/courses/${courseId}/chatbot-material?tenantId=${tenantId}`
-        );
-
-        if (!materialResponse.ok) {
-          const errorText = await materialResponse.text();
-          console.error('Material URL fetch failed:', {
-            status: materialResponse.status,
-            statusText: materialResponse.statusText,
-            errorText
-          });
-          throw new Error(`Failed to fetch course material URL: ${materialResponse.status} ${materialResponse.statusText}`);
-        }
-
-        const materialData = await materialResponse.json();
-        s3Url = materialData.materialUrl;
-        
-        if (!s3Url) {
-          throw new Error('Material URL is empty in the response');
-        }
-
-        // Store it for future use
-        localStorage.setItem(`course_material_${courseId}`, s3Url);
-        console.log('Stored material URL in localStorage:', s3Url);
-      } else {
-        console.log('Using material URL from localStorage:', storedMaterialUrl);
-        s3Url = storedMaterialUrl;
-      }
-
-      // Generate MCQs using the AI service
-      console.log('Sending request to AI service with URL:', s3Url);
-      const mcqResponse = await fetch(`${import.meta.env.VITE_AI_SERVICE_URL}/generate_mcq`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          s3_url: s3Url,
-          course_id: courseId,
-          tenant_id: tenantId
-        })
-      });
-
-      if (!mcqResponse.ok) {
-        const errorText = await mcqResponse.text();
-        console.error('MCQ generation failed:', {
-          status: mcqResponse.status,
-          statusText: mcqResponse.statusText,
-          errorText,
-          url: `${import.meta.env.VITE_AI_SERVICE_URL}/generate_mcq`
-        });
-        throw new Error('Failed to generate MCQs');
-      }
-
-      const mcqData = await mcqResponse.json();
-      console.log('Generated MCQs:', mcqData);
-      
-      if (!mcqData.mcqs || !Array.isArray(mcqData.mcqs)) {
-        throw new Error('Invalid MCQ data received');
-      }
-
-      // Store MCQ data in localStorage for the quiz page
-      localStorage.setItem('currentQuiz', JSON.stringify(mcqData.mcqs));
-
-      // Call the original onComplete handler
-      await onComplete();
-
-      // Navigate to the quiz page
-      window.location.href = `/dashboard/course/${courseId}/quiz?tenantId=${tenantId}`;
-    } catch (error) {
-      console.error('Error preparing quiz:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to prepare quiz. Please try again.');
-    }
-  };
-  
   const handleNext = () => {
-    if (!canAdvance && progress < 80) {
-      toast.info("Please finish this slide before moving to the next one");
-      return;
-    }
-    
     if (currentSlideIndex < slides.length - 1) {
       onSlideChange(currentSlideIndex + 1);
     } else {
@@ -268,95 +161,137 @@ const SlidePlayer = ({
       handleComplete();
     }
   };
-  
+
   const handlePrev = () => {
     if (currentSlideIndex > 0) {
       onSlideChange(currentSlideIndex - 1);
     }
   };
-  
+
   const handleSlideSelect = (index: number) => {
     // Allow navigating to completed slides or the next available
     const maxAllowedIndex = Math.max(
-      slides.findIndex(slide => !slide.completed),
+      slides.findIndex((slide) => !slide.completed),
       currentSlideIndex
     );
-    
+
     if (index <= maxAllowedIndex) {
       onSlideChange(index);
     }
   };
-  
+
   const toggleMute = () => {
     setIsMuted(!isMuted);
   };
-  
+
   const handleVolumeChange = (value: number[]) => {
     setVolume(value[0]);
     if (value[0] > 0 && isMuted) {
       setIsMuted(false);
     }
   };
-  
+
   const changePlaybackRate = (rate: number) => {
     setPlaybackRate(rate);
   };
-  
+
   const toggleSubtitles = () => {
     setShowSubtitles(!showSubtitles);
   };
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="flex-1 flex flex-col lg:flex-row gap-4 p-4">
-        {/* Left Column - Main Slide and Controls */}
-        <div className="flex-1 flex flex-col">
-          {/* Main Slide Content */}
-          <div className="flex-1 bg-white dark:bg-gray-800 rounded-t-xl p-6">
-            <SlideContent
-              title={currentSlide.title}
-              content={currentSlide.content}
-              isLoading={isLoadingExplanations}
-            />
-          </div>
+    <div className="flex flex-col lg:flex-row gap-4">
+      {/* Sidebar with slide navigation and subtitles */}
+      <div className="lg:w-1/4 space-y-4">
+        <SlideNavigation
+          slides={slides}
+          currentIndex={currentSlideIndex}
+          overallProgress={overallProgress}
+          onSlideSelect={handleSlideSelect}
+        />
 
-          {/* Media Controls */}
-          <div className="bg-white dark:bg-gray-800 rounded-b-xl p-4 border-t border-gray-200 dark:border-gray-700">
-            <SlideControls
-              isPlaying={isPlaying}
-              togglePlayback={togglePlayback}
-              handlePrev={handlePrev}
-              handleNext={handleNext}
-              isFirstSlide={isFirstSlide}
-              isLastSlide={isLastSlide}
-              isMuted={isMuted}
-              toggleMute={toggleMute}
-              volume={volume}
-              handleVolumeChange={handleVolumeChange}
-              playbackRate={playbackRate}
-              changePlaybackRate={changePlaybackRate}
-              onComplete={handleComplete}
-              showSubtitles={showSubtitles}
-              toggleSubtitles={toggleSubtitles}
-              canAdvance={canAdvance}
-            />
-          </div>
-        </div>
+        {/* Subtitles/Explanations Panel */}
+        <AnimatePresence mode="wait">
+          {showSubtitles && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              transition={{ duration: 0.3 }}
+              className="mt-4"
+            >
+              <Card className="p-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-pink-100/50 dark:border-purple-900/30">
+                <div className="flex items-center gap-3 mb-3">
+                  <Avatar className="h-10 w-10 border-2 border-purple-200 dark:border-purple-900">
+                    <AvatarImage src="/placeholder.svg" alt="Presenter" />
+                    <AvatarFallback className="bg-gradient-to-br from-pink-400 to-purple-600 text-white">
+                      P
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      Virtual Presenter
+                    </h4>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Personalized Explanation
+                    </p>
+                  </div>
+                </div>
 
-        {/* Right Column - Slide Navigation */}
-        <div className="lg:w-72">
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sticky top-4">
-            <SlideNavigation
-              slides={slides}
-              currentIndex={currentSlideIndex}
-              onSlideSelect={handleSlideSelect}
-              onNext={handleNext}
-              onPrev={handlePrev}
-              isFirstSlide={isFirstSlide}
-              isLastSlide={isLastSlide}
-              overallProgress={overallProgress}
-            />
-          </div>
+                {isLoadingExplanations ? (
+                  <div className="animate-pulse h-32 bg-gray-200 dark:bg-gray-700 rounded-md" />
+                ) : (
+                  <div className="prose prose-sm dark:prose-invert max-w-none">
+                    <p className="text-gray-700 dark:text-gray-300">
+                      {currentSlide?.explanation || currentSlide?.content}
+                    </p>
+                  </div>
+                )}
+              </Card>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Main content area */}
+      <div className="lg:w-3/4">
+        <Card className="p-6 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md border border-pink-100/50 dark:border-purple-900/30 shadow-lg">
+          <SlideContent
+            title={currentSlide.title}
+            content={currentSlide.content}
+            currentIndex={currentSlideIndex}
+            totalSlides={slides.length}
+            progress={progress}
+            isPlaying={isPlaying}
+            onSlideChange={onSlideChange}
+          />
+
+          <SlideControls
+            isPlaying={isPlaying}
+            togglePlayback={togglePlayback}
+            handlePrev={handlePrev}
+            handleNext={handleNext}
+            isFirstSlide={isFirstSlide}
+            isLastSlide={isLastSlide}
+            isMuted={isMuted}
+            toggleMute={toggleMute}
+            volume={volume}
+            handleVolumeChange={handleVolumeChange}
+            playbackRate={playbackRate}
+            changePlaybackRate={changePlaybackRate}
+            onComplete={onComplete}
+            showSubtitles={showSubtitles}
+            toggleSubtitles={toggleSubtitles}
+            canAdvance={canAdvance}
+          />
+        </Card>
+
+        {/* Chat Help section */}
+        <div className="mt-6">
+          <ChatHelp
+            slideTitle={currentSlide.title}
+            slideContent={currentSlide.content}
+          />
         </div>
       </div>
     </div>

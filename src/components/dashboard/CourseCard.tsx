@@ -1,4 +1,11 @@
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Book, Users, Clock } from "lucide-react";
@@ -12,16 +19,18 @@ interface CourseCardProps {
   enrolledCount?: number;
   progress?: number;
   userRole: "superuser" | "admin" | "employee";
+  onClick?: () => void;
 }
 
-const CourseCard = ({ 
-  id, 
-  title, 
-  description, 
-  duration, 
-  enrolledCount, 
+const CourseCard = ({
+  id,
+  title,
+  description,
+  duration,
+  enrolledCount,
   progress = 0,
-  userRole 
+  userRole,
+  onClick,
 }: CourseCardProps) => {
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
@@ -35,7 +44,7 @@ const CourseCard = ({
             <Clock className="h-4 w-4 mr-1" />
             <span>{duration}</span>
           </div>
-          
+
           {userRole !== "employee" && enrolledCount !== undefined && (
             <div className="flex items-center">
               <Users className="h-4 w-4 mr-1" />
@@ -43,7 +52,7 @@ const CourseCard = ({
             </div>
           )}
         </div>
-        
+
         {userRole === "employee" && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
@@ -55,19 +64,24 @@ const CourseCard = ({
         )}
       </CardContent>
       <CardFooter className="bg-gray-50 border-t border-gray-100 flex justify-between">
-        <Link to={`/dashboard/course/${id}`}>
-          <Button variant="outline" className="text-complybrand-700 border-complybrand-700">
+        <Link to={`/course/${id}`}>
+          <Button
+            variant="outline"
+            className="text-complybrand-700 border-complybrand-700"
+          >
             {userRole === "employee" ? "Continue" : "View Details"}
           </Button>
         </Link>
-        
+
         {userRole === "employee" && (
-          <Link to={`/dashboard/course/${id}/play`}>
-            <Button className="bg-complybrand-700 hover:bg-complybrand-800">
-              <Book className="mr-2 h-4 w-4" />
-              {progress > 0 ? "Resume Course" : "Start Course"}
-            </Button>
-          </Link>
+          <Button
+            className="bg-complybrand-700 hover:bg-complybrand-800"
+            onClick={onClick}
+          >
+            <Book className="mr-2 h-4 w-4" />
+            {progress > 0 ? "Resume Course" : "Start Course"}
+          </Button>
+
         )}
       </CardFooter>
     </Card>
